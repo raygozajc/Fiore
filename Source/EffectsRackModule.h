@@ -32,6 +32,8 @@ private:
     juce::TextButton delayOnButton {"On"};
     juce::Label reverbSlotLabel;
     juce::TextButton reverbOnButton {"On"};
+    juce::Label chorusSlotLabel;
+    juce::TextButton chorusOnButton {"On"};
 
     juce::Label delayTimeLabel, delayFeedbackLabel, delayMixLabel;
     juce::Label delayTimeValueLabel, delayFeedbackValueLabel, delayMixValueLabel;
@@ -41,12 +43,18 @@ private:
     juce::Label reverbRoomValueLabel, reverbDampingValueLabel, reverbMixValueLabel;
     juce::Slider reverbRoomSlider, reverbDampingSlider, reverbMixSlider;
 
-    juce::Label emptySlot3, emptySlot4;
+    juce::Label chorusRateLabel, chorusDepthLabel, chorusMixLabel;
+    juce::Label chorusRateValueLabel, chorusDepthValueLabel, chorusMixValueLabel;
+    juce::Slider chorusRateSlider, chorusDepthSlider, chorusMixSlider;
+
+    juce::Label emptySlot4;
 
     std::unique_ptr<ButtonAttachment> delayOnAttachment;
     std::unique_ptr<SliderAttachment> delayTimeAttachment, delayFeedbackAttachment, delayMixAttachment;
     std::unique_ptr<ButtonAttachment> reverbOnAttachment;
     std::unique_ptr<SliderAttachment> reverbRoomAttachment, reverbDampingAttachment, reverbMixAttachment;
+    std::unique_ptr<ButtonAttachment> chorusOnAttachment;
+    std::unique_ptr<SliderAttachment> chorusRateAttachment, chorusDepthAttachment, chorusMixAttachment;
 
     juce::AudioProcessorValueTreeState& apvts;
 

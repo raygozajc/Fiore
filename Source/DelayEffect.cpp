@@ -18,7 +18,11 @@ void DelayEffect::reset() {
 }
 
 void DelayEffect::process(juce::AudioBuffer<float>& buffer, bool isOn, float delayTimeMs, float feedback, float wetMix) {
-    delayLine.setDelay(delayTimeMs * 0.001f * static_cast<float> (currentSampleRate));
+    const auto safeDelayTimeMs = juce::jlimit(20.0f, maxDelayTimeSeconds * 1000.0f, delayTimeMs);
+    const auto safeFeedback = juce::jlimit(0.0f, 0.75f, feedback);
+    const auto safeWetMix = juce::jlimit(0.0f, 0.60f, wetMix);
+
+    delayLine.setDelay(safeDelayTimeMs * 0.001f * static_cast<float> (currentSampleRate));
 
     const auto numChannels = buffer.getNumChannels();
     const auto numSamples = buffer.getNumSamples();
@@ -31,8 +35,8 @@ void DelayEffect::process(juce::AudioBuffer<float>& buffer, bool isOn, float del
             const auto delayedSample = delayLine.popSample(channel);
 
             if (isOn) {
-                delayLine.pushSample(channel, drySample + delayedSample * feedback);
-                channelData[sample] = drySample + delayedSample * wetMix;
+                delayLine.pushSample(channel, drySample + delayedSample * safeFeedback);
+                channelData[sample] = drySample + delayedSample * safeWetMix;
             } else {
                 delayLine.pushSample(channel, 0.0f);
             }

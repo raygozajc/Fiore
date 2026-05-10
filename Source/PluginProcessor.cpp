@@ -26,6 +26,7 @@ void FioreAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     synth.setCurrentPlaybackSampleRate(sampleRate);
     outputDelay.prepare(sampleRate, samplesPerBlock, getTotalNumOutputChannels());
     outputReverb.prepare(sampleRate, samplesPerBlock, getTotalNumOutputChannels());
+    outputChorus.prepare(sampleRate, samplesPerBlock, getTotalNumOutputChannels());
     
     for (int i = 0; i < synth.getNumVoices(); i++) {
         if (auto voice = dynamic_cast<SynthVoice*>(synth.getVoice(i))) {
@@ -62,20 +63,31 @@ juce::AudioProcessorValueTreeState::ParameterLayout FioreAudioProcessor::createP
     params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("GAIN", 1), "Global Gain", gainRange, 0.0));
 
     // Insert FX Params
-    juce::NormalisableRange<float> delayTimeRange {1.0f, DelayEffect::maxDelayTimeSeconds * 1000.0f, 1.0f};
+    juce::NormalisableRange<float> delayTimeRange {20.0f, DelayEffect::maxDelayTimeSeconds * 1000.0f, 1.0f};
     delayTimeRange.setSkewForCentre(350.0f);
     params.push_back(std::make_unique<juce::AudioParameterBool>(ParameterID("DELAY_ON", 1), "Delay On/Off", true));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("DELAY_TIME", 1), "Delay Time", delayTimeRange, 350.0f));
-    juce::NormalisableRange<float> delayFeedbackRange {0.0f, 95.0f, 1.0f};
-    juce::NormalisableRange<float> delayMixRange {0.0f, 100.0f, 1.0f};
-    params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("DELAY_FEEDBACK", 1), "Delay Feedback", delayFeedbackRange, 35.0f));
+    juce::NormalisableRange<float> delayFeedbackRange {0.0f, 75.0f, 1.0f};
+    juce::NormalisableRange<float> delayMixRange {0.0f, 60.0f, 1.0f};
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("DELAY_FEEDBACK", 1), "Delay Feedback", delayFeedbackRange, 30.0f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("DELAY_MIX", 1), "Delay Mix", delayMixRange, 25.0f));
 
-    juce::NormalisableRange<float> reverbPercentRange {0.0f, 100.0f, 1.0f};
+    juce::NormalisableRange<float> reverbRoomRange {5.0f, 90.0f, 1.0f};
+    juce::NormalisableRange<float> reverbDampingRange {0.0f, 90.0f, 1.0f};
+    juce::NormalisableRange<float> reverbMixRange {0.0f, 50.0f, 1.0f};
     params.push_back(std::make_unique<juce::AudioParameterBool>(ParameterID("REVERB_ON", 1), "Reverb On/Off", true));
-    params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("REVERB_ROOM", 1), "Reverb Room Size", reverbPercentRange, 40.0f));
-    params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("REVERB_DAMPING", 1), "Reverb Damping", reverbPercentRange, 50.0f));
-    params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("REVERB_MIX", 1), "Reverb Mix", reverbPercentRange, 20.0f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("REVERB_ROOM", 1), "Reverb Room Size", reverbRoomRange, 40.0f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("REVERB_DAMPING", 1), "Reverb Damping", reverbDampingRange, 50.0f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("REVERB_MIX", 1), "Reverb Mix", reverbMixRange, 18.0f));
+
+    juce::NormalisableRange<float> chorusRateRange {0.1f, 3.0f, 0.1f};
+    chorusRateRange.setSkewForCentre(0.7f);
+    juce::NormalisableRange<float> chorusDepthRange {0.0f, 100.0f, 1.0f};
+    juce::NormalisableRange<float> chorusMixRange {0.0f, 45.0f, 1.0f};
+    params.push_back(std::make_unique<juce::AudioParameterBool>(ParameterID("CHORUS_ON", 1), "Chorus On/Off", true));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("CHORUS_RATE", 1), "Chorus Rate", chorusRateRange, 0.7f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("CHORUS_DEPTH", 1), "Chorus Depth", chorusDepthRange, 25.0f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("CHORUS_MIX", 1), "Chorus Mix", chorusMixRange, 18.0f));
     
     // LFO/Vibrato Module Params
     juce::NormalisableRange<float> rateRange {0.01f, 200.0f, 0.01f};
@@ -191,6 +203,12 @@ void FioreAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
     const auto reverbDamping = apvts.getRawParameterValue("REVERB_DAMPING")->load() / 100.0f;
     const auto reverbWet = apvts.getRawParameterValue("REVERB_MIX")->load() / 100.0f;
     outputReverb.process(buffer, reverbIsOn, reverbRoom, reverbDamping, reverbWet);
+
+    const auto chorusIsOn = apvts.getRawParameterValue("CHORUS_ON")->load() > 0.5f;
+    const auto chorusRate = apvts.getRawParameterValue("CHORUS_RATE")->load();
+    const auto chorusDepth = apvts.getRawParameterValue("CHORUS_DEPTH")->load() / 100.0f;
+    const auto chorusWet = apvts.getRawParameterValue("CHORUS_MIX")->load() / 100.0f;
+    outputChorus.process(buffer, chorusIsOn, chorusRate, chorusDepth, chorusWet);
 }
 
 void FioreAudioProcessor::releaseResources() {

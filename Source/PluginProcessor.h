@@ -1,6 +1,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "ChorusEffect.h"
 #include "DelayEffect.h"
 #include "ReverbEffect.h"
 #include "SynthVoice.h"
@@ -44,6 +45,7 @@ private:
     juce::AudioProcessorValueTreeState apvts;
     DelayEffect outputDelay;
     ReverbEffect outputReverb;
+    ChorusEffect outputChorus;
     
     juce::AudioProcessorValueTreeState::ParameterLayout createParams();
     void updateParams();

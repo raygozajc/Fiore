@@ -48,6 +48,7 @@ endif()
 target_sources(Fiore
     PRIVATE
         Source/AmpModule.cpp
+        Source/ChorusEffect.cpp
         Source/DelayEffect.cpp
         Source/EnvModule.cpp
         Source/EffectsRackModule.cpp

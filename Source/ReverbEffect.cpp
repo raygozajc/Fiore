@@ -19,11 +19,15 @@ void ReverbEffect::process(juce::AudioBuffer<float>& buffer, bool isOn, float ro
         return;
     }
 
+    const auto safeRoomSize = juce::jlimit(0.05f, 0.90f, roomSize);
+    const auto safeDamping = juce::jlimit(0.0f, 0.90f, damping);
+    const auto safeWetMix = juce::jlimit(0.0f, 0.50f, wetMix);
+
     juce::dsp::Reverb::Parameters params;
-    params.roomSize = roomSize;
-    params.damping = damping;
-    params.wetLevel = wetMix;
-    params.dryLevel = 1.0f - wetMix;
+    params.roomSize = safeRoomSize;
+    params.damping = safeDamping;
+    params.wetLevel = safeWetMix;
+    params.dryLevel = 1.0f - safeWetMix;
     params.width = 1.0f;
     params.freezeMode = 0.0f;
     reverb.setParameters(params);

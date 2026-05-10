@@ -22,7 +22,7 @@ EffectsRackModule::EffectsRackModule(juce::AudioProcessorValueTreeState& process
     delayOnAttachment = std::make_unique<ButtonAttachment>(apvts, "DELAY_ON", delayOnButton);
 
     configureSlider(delayTimeSlider, delayTimeLabel, delayTimeValueLabel, "Time", " ms", 0, 350.0, "DELAY_TIME", delayTimeAttachment);
-    configureSlider(delayFeedbackSlider, delayFeedbackLabel, delayFeedbackValueLabel, "Feedback", "%", 0, 35.0, "DELAY_FEEDBACK", delayFeedbackAttachment);
+    configureSlider(delayFeedbackSlider, delayFeedbackLabel, delayFeedbackValueLabel, "Feedback", "%", 0, 30.0, "DELAY_FEEDBACK", delayFeedbackAttachment);
     configureSlider(delayMixSlider, delayMixLabel, delayMixValueLabel, "Mix", "%", 0, 25.0, "DELAY_MIX", delayMixAttachment);
 
     addAndMakeVisible(reverbSlotLabel);
@@ -41,7 +41,25 @@ EffectsRackModule::EffectsRackModule(juce::AudioProcessorValueTreeState& process
 
     configureSlider(reverbRoomSlider, reverbRoomLabel, reverbRoomValueLabel, "Room", "%", 0, 40.0, "REVERB_ROOM", reverbRoomAttachment);
     configureSlider(reverbDampingSlider, reverbDampingLabel, reverbDampingValueLabel, "Damp", "%", 0, 50.0, "REVERB_DAMPING", reverbDampingAttachment);
-    configureSlider(reverbMixSlider, reverbMixLabel, reverbMixValueLabel, "Mix", "%", 0, 20.0, "REVERB_MIX", reverbMixAttachment);
+    configureSlider(reverbMixSlider, reverbMixLabel, reverbMixValueLabel, "Mix", "%", 0, 18.0, "REVERB_MIX", reverbMixAttachment);
+
+    addAndMakeVisible(chorusSlotLabel);
+    chorusSlotLabel.setText("3  CHORUS", juce::dontSendNotification);
+    chorusSlotLabel.setFont(juce::Font (juce::FontOptions (14.0f, juce::Font::bold)));
+    chorusSlotLabel.setJustificationType(juce::Justification::centredLeft);
+
+    addAndMakeVisible(chorusOnButton);
+    chorusOnButton.setToggleable(true);
+    chorusOnButton.setClickingTogglesState(true);
+    chorusOnButton.setToggleState(true, juce::dontSendNotification);
+    chorusOnButton.onClick = [this] {
+        chorusOnButton.setButtonText(chorusOnButton.getToggleState() ? "On" : "Off");
+    };
+    chorusOnAttachment = std::make_unique<ButtonAttachment>(apvts, "CHORUS_ON", chorusOnButton);
+
+    configureSlider(chorusRateSlider, chorusRateLabel, chorusRateValueLabel, "Rate", " Hz", 1, 0.7, "CHORUS_RATE", chorusRateAttachment);
+    configureSlider(chorusDepthSlider, chorusDepthLabel, chorusDepthValueLabel, "Depth", "%", 0, 25.0, "CHORUS_DEPTH", chorusDepthAttachment);
+    configureSlider(chorusMixSlider, chorusMixLabel, chorusMixValueLabel, "Mix", "%", 0, 18.0, "CHORUS_MIX", chorusMixAttachment);
 
     auto configureEmptySlot = [this] (juce::Label& label, const juce::String& text) {
         addAndMakeVisible(label);
@@ -50,7 +68,6 @@ EffectsRackModule::EffectsRackModule(juce::AudioProcessorValueTreeState& process
         label.setJustificationType(juce::Justification::centred);
     };
 
-    configureEmptySlot(emptySlot3, "3  EMPTY");
     configureEmptySlot(emptySlot4, "4  EMPTY");
 }
 
@@ -184,6 +201,18 @@ void EffectsRackModule::resized() {
                     reverbMixSlider,
                     reverbMixValueLabel);
 
-    emptySlot3.setBounds(slotArea.removeFromTop(slotHeight).reduced(8, 10));
+    placeEffectSlot(slotArea.removeFromTop(slotHeight),
+                    chorusSlotLabel,
+                    chorusOnButton,
+                    chorusRateLabel,
+                    chorusRateSlider,
+                    chorusRateValueLabel,
+                    chorusDepthLabel,
+                    chorusDepthSlider,
+                    chorusDepthValueLabel,
+                    chorusMixLabel,
+                    chorusMixSlider,
+                    chorusMixValueLabel);
+
     emptySlot4.setBounds(slotArea.removeFromTop(slotHeight).reduced(8, 10));
 }
