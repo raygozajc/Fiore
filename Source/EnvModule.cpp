@@ -1,5 +1,6 @@
 #include <JuceHeader.h>
 #include "EnvModule.h"
+#include "Theme.h"
 
 EnvTab::EnvTab(const String& title, juce::AudioProcessorValueTreeState& processorState, const String& paramIdPrefix): apvts(processorState) {
     // Title label
@@ -75,15 +76,17 @@ void EnvTab::resized() {
 
 EnvModule::EnvModule(juce::AudioProcessorValueTreeState& processorState): ampEnvTab("AMP ENV", processorState, "AMP"), filterEnvTab("FILTER ENV", processorState, "FILT") {
     addAndMakeVisible(tabs);
-    tabs.addTab("Amplitude Env", juce::Colours::slategrey, &ampEnvTab, false);
-    tabs.addTab("Filter Env", juce::Colours::slategrey.darker(), &filterEnvTab, false);
+    tabs.addTab("Amplitude Env", Theme::panelLight, &ampEnvTab, false);
+    tabs.addTab("Filter Env", Theme::panel, &filterEnvTab, false);
 }
 
 EnvModule::~EnvModule() {
 }
 
 void EnvModule::paint(juce::Graphics& g) {
-    g.fillAll(juce::Colours::slategrey.darker().darker());
+    g.fillAll(Theme::panel);
+    g.setColour(Theme::panelBorder);
+    g.drawRoundedRectangle(getLocalBounds().toFloat().reduced(2), 12.0f, 1.4f);
 }
 
 void EnvModule::resized() {

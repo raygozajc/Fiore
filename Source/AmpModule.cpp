@@ -1,5 +1,6 @@
 #include <JuceHeader.h>
 #include "AmpModule.h"
+#include "Theme.h"
 
 AmpModule::AmpModule(juce::AudioProcessorValueTreeState& processorState): apvts(processorState) {
     // Volume slider
@@ -27,7 +28,9 @@ AmpModule::AmpModule(juce::AudioProcessorValueTreeState& processorState): apvts(
 AmpModule::~AmpModule() {}
 
 void AmpModule::paint(juce::Graphics& g) {
-    g.fillAll(juce::Colours::slategrey.brighter());
+    g.fillAll(Theme::panel);
+    g.setColour(Theme::panelBorder);
+    g.drawRoundedRectangle(getLocalBounds().toFloat().reduced(2), 12.0f, 1.2f);
 }
 
 void AmpModule::resized() {

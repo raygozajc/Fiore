@@ -1,5 +1,6 @@
 #include <JuceHeader.h>
 #include "LFOVibratoModule.h"
+#include "Theme.h"
 
 // LFO Tab //
 
@@ -116,14 +117,16 @@ void LFOTab::buttonClicked(Button* button) {
 
 LFOVibratoModule::LFOVibratoModule(juce::AudioProcessorValueTreeState& processorState): lfoTab("FILTER LFO", processorState, "LFO"), vibratoTab("VIBRATO", processorState, "VIB") {
     addAndMakeVisible(tabs);
-    tabs.addTab("Filter LFO", juce::Colours::slategrey.darker(), &lfoTab, false);
-    tabs.addTab("Vibrato", juce::Colours::slategrey, &vibratoTab, false);
+    tabs.addTab("Filter LFO", Theme::panelLight, &lfoTab, false);
+    tabs.addTab("Vibrato", Theme::panel, &vibratoTab, false);
 }
 
 LFOVibratoModule::~LFOVibratoModule() {}
 
 void LFOVibratoModule::paint(juce::Graphics& g) {
-    g.fillAll(juce::Colours::slategrey.darker().darker());
+    g.fillAll(Theme::panel);
+    g.setColour(Theme::panelBorder);
+    g.drawRoundedRectangle(getLocalBounds().toFloat().reduced(2), 12.0f, 1.4f);
 }
 
 void LFOVibratoModule::resized() {

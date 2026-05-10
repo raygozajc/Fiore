@@ -1,5 +1,6 @@
 #include <JuceHeader.h>
 #include "OscillatorModule.h"
+#include "Theme.h"
 
 void OscillatorModule::configureLabel(juce::Component& slider, juce::Label& label, const juce::String& labelText) {
     addAndMakeVisible(label);
@@ -75,7 +76,9 @@ OscillatorModule::OscillatorModule(juce::AudioProcessorValueTreeState& processor
 OscillatorModule::~OscillatorModule() {}
 
 void OscillatorModule::paint(juce::Graphics& g) {
-    g.fillAll(juce::Colours::slategrey);
+    g.fillAll(Theme::panel);
+    g.setColour(Theme::panelBorder);
+    g.drawRoundedRectangle(getLocalBounds().toFloat().reduced(2), 12.0f, 1.4f);
 }
 
 void OscillatorModule::resized() {

@@ -1,5 +1,6 @@
 #include <JuceHeader.h>
 #include "EffectsRackModule.h"
+#include "Theme.h"
 
 namespace {
     std::size_t slotToIndex(int slotIndex) {
@@ -169,8 +170,8 @@ void EffectsRackModule::configureSlider(juce::Slider& slider,
 
     addAndMakeVisible(valueLabel);
     valueLabel.setJustificationType(juce::Justification::centred);
-    valueLabel.setColour(juce::Label::outlineColourId, juce::Colours::whitesmoke.withAlpha(0.55f));
-    valueLabel.setColour(juce::Label::backgroundColourId, juce::Colours::transparentBlack);
+    valueLabel.setColour(juce::Label::outlineColourId, Theme::text.withAlpha(0.55f));
+    valueLabel.setColour(juce::Label::backgroundColourId, Theme::backgroundTop.withAlpha(0.24f));
 
     auto updateValueLabel = [&slider, &valueLabel, textValueSuffix, numDecimalPlacesToDisplay] {
         valueLabel.setText(juce::String(slider.getValue(), numDecimalPlacesToDisplay) + textValueSuffix,
@@ -372,16 +373,16 @@ void EffectsRackModule::updateEffectVisibility() {
 }
 
 void EffectsRackModule::paint(juce::Graphics& g) {
-    g.fillAll(juce::Colours::slategrey.darker(0.25f));
+    g.fillAll(Theme::panel);
 
     auto area = getLocalBounds();
     area.removeFromBottom(area.getHeight() / 12);
     area.removeFromTop(8);
 
-    g.setColour(juce::Colours::whitesmoke);
+    g.setColour(Theme::panelBorder);
     for (int i = 0; i < 4; ++i) {
         auto slot = area.removeFromTop(area.getHeight() / (4 - i)).reduced(8, 4);
-        g.drawRect(slot, 1);
+        g.drawRoundedRectangle(slot.toFloat(), 8.0f, 1.2f);
     }
 }
 

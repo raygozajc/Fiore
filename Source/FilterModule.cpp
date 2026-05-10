@@ -1,5 +1,6 @@
 #include <JuceHeader.h>
 #include "FilterModule.h"
+#include "Theme.h"
 
 void FilterModule::configureSlider(juce::Slider& slider, const juce::String textValueSuffix, int numDecimalPlacesToDisplay, const juce::String& paramID, std::unique_ptr<SliderAttachment>& attachmentToCreate) {
     addAndMakeVisible(slider);
@@ -64,7 +65,9 @@ FilterModule::FilterModule(juce::AudioProcessorValueTreeState& processorState): 
 FilterModule::~FilterModule() {}
 
 void FilterModule::paint(juce::Graphics& g) {
-    g.fillAll(juce::Colours::slategrey.darker());
+    g.fillAll(Theme::panel);
+    g.setColour(Theme::panelBorder);
+    g.drawRoundedRectangle(getLocalBounds().toFloat().reduced(2), 12.0f, 1.2f);
 }
 
 void FilterModule::resized() {
