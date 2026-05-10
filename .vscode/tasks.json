@@ -1,0 +1,38 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build",
+            "type": "shell",
+            "command": "/bin/zsh",
+            "args": [
+                "-lc",
+                "cmake -S \"${workspaceFolder}\" -B \"${workspaceFolder}/build\" -DCMAKE_BUILD_TYPE=Debug && cmake --build \"${workspaceFolder}/build\" --config Debug"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "Build and Run",
+            "type": "shell",
+            "command": "/bin/zsh",
+            "args": [
+                "-lc",
+                "cmake -S \"${workspaceFolder}\" -B \"${workspaceFolder}/build\" -DCMAKE_BUILD_TYPE=Debug && cmake --build \"${workspaceFolder}/build\" --config Debug && open \"${workspaceFolder}/build/Fiore_artefacts/Debug/Standalone/Fiore.app\""
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "Run Only",
+            "type": "shell",
+            "command": "open",
+            "args": [
+                "${workspaceFolder}/build/Fiore_artefacts/Debug/Standalone/Fiore.app"
+            ],
+            "problemMatcher": []
+        }
+    ]
+}

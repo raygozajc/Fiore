@@ -7,7 +7,7 @@
 */
 class AmpModule: public juce::Component {
     public:
-        AmpModule(juce::AudioProcessorValueTreeState& apvts);
+        AmpModule(juce::AudioProcessorValueTreeState& processorState);
         ~AmpModule() override;
         void paint (juce::Graphics&) override;
         void resized() override;

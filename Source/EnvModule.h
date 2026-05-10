@@ -8,8 +8,8 @@
 class EnvTab: public juce::Component {
     public:
         using SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
-        EnvTab(const String& title, juce::AudioProcessorValueTreeState& apvts, const String& paramIdPrefix);
-        ~EnvTab();
+        EnvTab(const String& title, juce::AudioProcessorValueTreeState& processorState, const String& paramIdPrefix);
+        ~EnvTab() override;
         void paint (juce::Graphics&) override;
         void resized() override;
     
@@ -30,7 +30,7 @@ class EnvTab: public juce::Component {
 */
 class EnvModule: public juce::Component {
     public:
-        EnvModule(juce::AudioProcessorValueTreeState& apvts);
+        EnvModule(juce::AudioProcessorValueTreeState& processorState);
         ~EnvModule() override;
         void paint (juce::Graphics&) override;
         void resized() override;

@@ -1,7 +1,8 @@
 #include <JuceHeader.h>
 #include "AmpModule.h"
+#include "Theme.h"
 
-AmpModule::AmpModule(juce::AudioProcessorValueTreeState& apvts): apvts(apvts) {
+AmpModule::AmpModule(juce::AudioProcessorValueTreeState& processorState): apvts(processorState) {
     // Volume slider
     addAndMakeVisible(volumeSlider);
     volumeSlider.setSliderStyle(Slider::SliderStyle::RotaryVerticalDrag);
@@ -20,14 +21,16 @@ AmpModule::AmpModule(juce::AudioProcessorValueTreeState& apvts): apvts(apvts) {
     // Big text label
     addAndMakeVisible(ampModuleLabel);
     ampModuleLabel.setText("AMP", juce::dontSendNotification);
-    ampModuleLabel.setFont(juce::Font (16.0f, juce::Font::bold));
+    ampModuleLabel.setFont(juce::Font (juce::FontOptions (16.0f, juce::Font::bold)));
     ampModuleLabel.setJustificationType(juce::Justification::centred);
 }
 
 AmpModule::~AmpModule() {}
 
 void AmpModule::paint(juce::Graphics& g) {
-    g.fillAll(juce::Colours::slategrey.brighter());
+    g.fillAll(Theme::panel);
+    g.setColour(Theme::panelBorder);
+    g.drawRoundedRectangle(getLocalBounds().toFloat().reduced(2), 12.0f, 1.2f);
 }
 
 void AmpModule::resized() {

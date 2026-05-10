@@ -10,8 +10,8 @@ bool SynthVoice::canPlaySound(juce::SynthesiserSound* sound) {
 void SynthVoice::prepareToPlay(double sampleRate, int samplesPerBlock, int outputChannels) {
     juce::dsp::ProcessSpec spec;
     spec.sampleRate = sampleRate;
-    spec.maximumBlockSize = samplesPerBlock;
-    spec.numChannels = outputChannels;
+    spec.maximumBlockSize = static_cast<juce::uint32> (samplesPerBlock);
+    spec.numChannels = static_cast<juce::uint32> (outputChannels);
     
     // Required to call `prepare` on each of the juce::dsp processors.
     osc1.prepare(spec);
@@ -32,19 +32,23 @@ void SynthVoice::prepareToPlay(double sampleRate, int samplesPerBlock, int outpu
 }
 
 void SynthVoice::startNote(int midiNoteNumber, float velocity, juce::SynthesiserSound *sound, int currentPitchWheelPosition) {
+    juce::ignoreUnused(sound, currentPitchWheelPosition);
+
     lfo.reset();
     vibratoLfo.reset();
     
-    baseFreqHz = juce::MidiMessage::getMidiNoteInHertz(midiNoteNumber);
-    osc1.setLevel(velocity * 0.15 * osc1MixRatio);
-    osc2.setLevel(velocity * 0.15 * (1.0 - osc1MixRatio));
-    sineOsc.setLevel(velocity * 0.15 * sineLevel);
+    baseFreqHz = static_cast<float> (juce::MidiMessage::getMidiNoteInHertz(midiNoteNumber));
+    osc1.setLevel(velocity * 0.15f * osc1MixRatio);
+    osc2.setLevel(velocity * 0.15f * (1.0f - osc1MixRatio));
+    sineOsc.setLevel(velocity * 0.15f * sineLevel);
     adsr.noteOn();
     filterAdsr.noteOn();
-    currentVelocity = velocity * 0.15;
+    currentVelocity = velocity * 0.15f;
 }
 
 void SynthVoice::stopNote(float velocity, bool allowTailOff) {
+    juce::ignoreUnused(velocity);
+
     adsr.noteOff();
     filterAdsr.noteOff();
     if (!allowTailOff || !adsr.isActive()) {
@@ -53,10 +57,11 @@ void SynthVoice::stopNote(float velocity, bool allowTailOff) {
 }
 
 void SynthVoice::controllerMoved(int controllerNumber, int newControllerValue) {
+    juce::ignoreUnused(controllerNumber, newControllerValue);
 }
 
 void SynthVoice::pitchWheelMoved(int newPitchWheelValue) {
-    pitchWheelDetuneSemitones = juce::jmap((float) newPitchWheelValue, 0.0f, 16383.0f, -2.0f, 2.0f);;
+    pitchWheelDetuneSemitones = juce::jmap(static_cast<float> (newPitchWheelValue), 0.0f, 16383.0f, -2.0f, 2.0f);
 }
 
 void SynthVoice::renderNextBlock(juce::AudioBuffer<float> &outputBuffer, int startSample, int numSamples) {
@@ -78,9 +83,9 @@ void SynthVoice::renderNextBlock(juce::AudioBuffer<float> &outputBuffer, int sta
     
    // 1. Adjust the oscillators' frequencies with vibrato, detune, and pitch wheel
     float adjustedBaseFreq = getNewFreqFromVibratoLFO(numSamples);
-    osc1.setFrequency(adjustedBaseFreq * pow(2, (osc1DetuneSemitones + pitchWheelDetuneSemitones) / 12.0), true);
-    osc2.setFrequency(adjustedBaseFreq * pow(2, (osc2DetuneSemitones + pitchWheelDetuneSemitones) / 12.0), true);
-    sineOsc.setFrequency(adjustedBaseFreq * pow(2, pitchWheelDetuneSemitones / 12.0), true);
+    osc1.setFrequency(adjustedBaseFreq * std::pow(2.0f, (osc1DetuneSemitones + pitchWheelDetuneSemitones) / 12.0f), true);
+    osc2.setFrequency(adjustedBaseFreq * std::pow(2.0f, (osc2DetuneSemitones + pitchWheelDetuneSemitones) / 12.0f), true);
+    sineOsc.setFrequency(adjustedBaseFreq * std::pow(2.0f, pitchWheelDetuneSemitones / 12.0f), true);
     
     // 1. Get sounds from the oscillators and add them
     osc1.process(juce::dsp::ProcessContextReplacing<float> (osc1AudioBlock));
@@ -125,9 +130,9 @@ float SynthVoice::getNewFreqFromVibratoLFO(int numSamples) {
     for (int s = 0; s < numSamples; s++) {
         vibratoLfoOut += vibratoLfo.processSample(0.0f);
     }
-    vibratoLfoOut /= ((float) numSamples); // -1 to 1
+    vibratoLfoOut /= static_cast<float> (numSamples); // -1 to 1
 
-    float multiplier = pow(juce::jmap(vibratoDepth, 0.0f, 1.0f, 1.0f, 1.15f), vibratoLfoOut);
+    float multiplier = std::pow(juce::jmap(vibratoDepth, 0.0f, 1.0f, 1.0f, 1.15f), vibratoLfoOut);
     return juce::jmin(juce::jmax(baseFreqHz * multiplier, 20.0f), 20000.0f);
 }
 
@@ -138,13 +143,13 @@ float SynthVoice::getCutoffFromEnvAndLFO(int numSamples) {
         lfoOut += lfo.processSample(0.0f);
         avgFiltAdsrOut += filterAdsr.getNextSample();
     }
-    lfoOut /= ((float) numSamples);
-    avgFiltAdsrOut /= ((float) numSamples);
+    lfoOut /= static_cast<float> (numSamples);
+    avgFiltAdsrOut /= static_cast<float> (numSamples);
     
     // 2.1 Get multiplier from the filter envelope. At 100% amplitude, it controls the cutoff from x0 to x1
     auto adsrMultiplier = juce::jmap(avgFiltAdsrOut, 0.0f, 1.0f, 1.0f - filterEnvDepth, 1.0f);
     // 2.2 Get multiplier from LFO. At 100% amplitude, it can either x.25 or x4 the cutoff
-    float lfoMultiplier = pow(juce::jmap(lfoCutoffDepth, 0.0f, 1.0f, 1.0f, 4.0f), lfoOut);
+    float lfoMultiplier = std::pow(juce::jmap(lfoCutoffDepth, 0.0f, 1.0f, 1.0f, 4.0f), lfoOut);
     
     return juce::jmin(juce::jmax(baseCutoffHz * adsrMultiplier * lfoMultiplier, 20.0f), 20000.0f);
 }
@@ -163,14 +168,14 @@ void SynthVoice::setOscGainRatios(float val) {
     jassert(0 <= val && val <= 1);
     osc1MixRatio = val;
     osc1.setLevel(currentVelocity * osc1MixRatio);
-    osc2.setLevel(currentVelocity * (1.0 - osc1MixRatio));
+    osc2.setLevel(currentVelocity * (1.0f - osc1MixRatio));
 }
 
 void SynthVoice::setOscDetune(int semitones, int cents, int oscNum) {
     if (oscNum == 1) {
-        osc1DetuneSemitones = ((float) cents / 100.0);
+        osc1DetuneSemitones = static_cast<float> (cents) / 100.0f;
     } else if (oscNum == 2) {
-        osc2DetuneSemitones = semitones + ((float) cents / 100.0);
+        osc2DetuneSemitones = static_cast<float> (semitones) + (static_cast<float> (cents) / 100.0f);
     }
 }
 
