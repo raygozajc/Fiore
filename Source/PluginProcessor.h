@@ -3,6 +3,7 @@
 #include <JuceHeader.h>
 #include "ChorusEffect.h"
 #include "DelayEffect.h"
+#include "DistortionEffect.h"
 #include "ReverbEffect.h"
 #include "SynthVoice.h"
 
@@ -46,6 +47,7 @@ private:
     DelayEffect outputDelay;
     ReverbEffect outputReverb;
     ChorusEffect outputChorus;
+    DistortionEffect outputDistortion;
     
     juce::AudioProcessorValueTreeState::ParameterLayout createParams();
     void updateParams();

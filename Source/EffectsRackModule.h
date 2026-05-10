@@ -34,6 +34,8 @@ private:
     juce::TextButton reverbOnButton {"On"};
     juce::Label chorusSlotLabel;
     juce::TextButton chorusOnButton {"On"};
+    juce::Label distortionSlotLabel;
+    juce::TextButton distortionOnButton {"Off"};
 
     juce::Label delayTimeLabel, delayFeedbackLabel, delayMixLabel;
     juce::Label delayTimeValueLabel, delayFeedbackValueLabel, delayMixValueLabel;
@@ -47,7 +49,9 @@ private:
     juce::Label chorusRateValueLabel, chorusDepthValueLabel, chorusMixValueLabel;
     juce::Slider chorusRateSlider, chorusDepthSlider, chorusMixSlider;
 
-    juce::Label emptySlot4;
+    juce::Label distortionDriveLabel, distortionToneLabel, distortionMixLabel;
+    juce::Label distortionDriveValueLabel, distortionToneValueLabel, distortionMixValueLabel;
+    juce::Slider distortionDriveSlider, distortionToneSlider, distortionMixSlider;
 
     std::unique_ptr<ButtonAttachment> delayOnAttachment;
     std::unique_ptr<SliderAttachment> delayTimeAttachment, delayFeedbackAttachment, delayMixAttachment;
@@ -55,6 +59,8 @@ private:
     std::unique_ptr<SliderAttachment> reverbRoomAttachment, reverbDampingAttachment, reverbMixAttachment;
     std::unique_ptr<ButtonAttachment> chorusOnAttachment;
     std::unique_ptr<SliderAttachment> chorusRateAttachment, chorusDepthAttachment, chorusMixAttachment;
+    std::unique_ptr<ButtonAttachment> distortionOnAttachment;
+    std::unique_ptr<SliderAttachment> distortionDriveAttachment, distortionToneAttachment, distortionMixAttachment;
 
     juce::AudioProcessorValueTreeState& apvts;
 

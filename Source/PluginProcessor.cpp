@@ -27,6 +27,7 @@ void FioreAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     outputDelay.prepare(sampleRate, samplesPerBlock, getTotalNumOutputChannels());
     outputReverb.prepare(sampleRate, samplesPerBlock, getTotalNumOutputChannels());
     outputChorus.prepare(sampleRate, samplesPerBlock, getTotalNumOutputChannels());
+    outputDistortion.prepare(sampleRate, samplesPerBlock, getTotalNumOutputChannels());
     
     for (int i = 0; i < synth.getNumVoices(); i++) {
         if (auto voice = dynamic_cast<SynthVoice*>(synth.getVoice(i))) {
@@ -88,6 +89,13 @@ juce::AudioProcessorValueTreeState::ParameterLayout FioreAudioProcessor::createP
     params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("CHORUS_RATE", 1), "Chorus Rate", chorusRateRange, 0.7f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("CHORUS_DEPTH", 1), "Chorus Depth", chorusDepthRange, 25.0f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("CHORUS_MIX", 1), "Chorus Mix", chorusMixRange, 18.0f));
+
+    juce::NormalisableRange<float> distortionPercentRange {0.0f, 100.0f, 1.0f};
+    juce::NormalisableRange<float> distortionMixRange {0.0f, 80.0f, 1.0f};
+    params.push_back(std::make_unique<juce::AudioParameterBool>(ParameterID("DIST_ON", 1), "Distortion On/Off", false));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("DIST_DRIVE", 1), "Distortion Drive", distortionPercentRange, 45.0f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("DIST_TONE", 1), "Distortion Tone", distortionPercentRange, 65.0f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("DIST_MIX", 1), "Distortion Mix", distortionMixRange, 45.0f));
     
     // LFO/Vibrato Module Params
     juce::NormalisableRange<float> rateRange {0.01f, 200.0f, 0.01f};
@@ -209,6 +217,12 @@ void FioreAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
     const auto chorusDepth = apvts.getRawParameterValue("CHORUS_DEPTH")->load() / 100.0f;
     const auto chorusWet = apvts.getRawParameterValue("CHORUS_MIX")->load() / 100.0f;
     outputChorus.process(buffer, chorusIsOn, chorusRate, chorusDepth, chorusWet);
+
+    const auto distortionIsOn = apvts.getRawParameterValue("DIST_ON")->load() > 0.5f;
+    const auto distortionDrive = apvts.getRawParameterValue("DIST_DRIVE")->load() / 100.0f;
+    const auto distortionTone = apvts.getRawParameterValue("DIST_TONE")->load() / 100.0f;
+    const auto distortionWet = apvts.getRawParameterValue("DIST_MIX")->load() / 100.0f;
+    outputDistortion.process(buffer, distortionIsOn, distortionDrive, distortionTone, distortionWet);
 }
 
 void FioreAudioProcessor::releaseResources() {

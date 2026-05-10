@@ -61,14 +61,23 @@ EffectsRackModule::EffectsRackModule(juce::AudioProcessorValueTreeState& process
     configureSlider(chorusDepthSlider, chorusDepthLabel, chorusDepthValueLabel, "Depth", "%", 0, 25.0, "CHORUS_DEPTH", chorusDepthAttachment);
     configureSlider(chorusMixSlider, chorusMixLabel, chorusMixValueLabel, "Mix", "%", 0, 18.0, "CHORUS_MIX", chorusMixAttachment);
 
-    auto configureEmptySlot = [this] (juce::Label& label, const juce::String& text) {
-        addAndMakeVisible(label);
-        label.setText(text, juce::dontSendNotification);
-        label.setFont(juce::Font (juce::FontOptions (14.0f, juce::Font::bold)));
-        label.setJustificationType(juce::Justification::centred);
-    };
+    addAndMakeVisible(distortionSlotLabel);
+    distortionSlotLabel.setText("4  DIST", juce::dontSendNotification);
+    distortionSlotLabel.setFont(juce::Font (juce::FontOptions (14.0f, juce::Font::bold)));
+    distortionSlotLabel.setJustificationType(juce::Justification::centredLeft);
 
-    configureEmptySlot(emptySlot4, "4  EMPTY");
+    addAndMakeVisible(distortionOnButton);
+    distortionOnButton.setToggleable(true);
+    distortionOnButton.setClickingTogglesState(true);
+    distortionOnButton.setToggleState(false, juce::dontSendNotification);
+    distortionOnButton.onClick = [this] {
+        distortionOnButton.setButtonText(distortionOnButton.getToggleState() ? "On" : "Off");
+    };
+    distortionOnAttachment = std::make_unique<ButtonAttachment>(apvts, "DIST_ON", distortionOnButton);
+
+    configureSlider(distortionDriveSlider, distortionDriveLabel, distortionDriveValueLabel, "Drive", "%", 0, 45.0, "DIST_DRIVE", distortionDriveAttachment);
+    configureSlider(distortionToneSlider, distortionToneLabel, distortionToneValueLabel, "Tone", "%", 0, 65.0, "DIST_TONE", distortionToneAttachment);
+    configureSlider(distortionMixSlider, distortionMixLabel, distortionMixValueLabel, "Mix", "%", 0, 45.0, "DIST_MIX", distortionMixAttachment);
 }
 
 EffectsRackModule::~EffectsRackModule() {}
@@ -214,5 +223,16 @@ void EffectsRackModule::resized() {
                     chorusMixSlider,
                     chorusMixValueLabel);
 
-    emptySlot4.setBounds(slotArea.removeFromTop(slotHeight).reduced(8, 10));
+    placeEffectSlot(slotArea.removeFromTop(slotHeight),
+                    distortionSlotLabel,
+                    distortionOnButton,
+                    distortionDriveLabel,
+                    distortionDriveSlider,
+                    distortionDriveValueLabel,
+                    distortionToneLabel,
+                    distortionToneSlider,
+                    distortionToneValueLabel,
+                    distortionMixLabel,
+                    distortionMixSlider,
+                    distortionMixValueLabel);
 }
