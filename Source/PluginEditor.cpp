@@ -12,7 +12,7 @@ oscModule(p.getAPVTS()), filterModule(p.getAPVTS()), lfoVibratoModule(p.getAPVTS
     addAndMakeVisible(envModule);
     addAndMakeVisible(effectsRackModule);
     
-    setSize (1155, 615);
+    setSize (1155, 800);
 }
 
 Editor::~Editor() {

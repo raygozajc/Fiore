@@ -194,6 +194,35 @@ void EffectsRackModule::setSlotSelection(int slotIndex, int effectChoice) {
         parameter->setValueNotifyingHost(parameter->convertTo0to1(static_cast<float>(effectChoice)));
         parameter->endChangeGesture();
     }
+    
+    // When an effect is added, turn it ON by default (except for "None")
+    if (effectChoice != noEffect) {
+        juce::String effectOnParamID;
+        switch (effectChoice) {
+            case delayEffect:
+                effectOnParamID = "DELAY_ON";
+                break;
+            case reverbEffect:
+                effectOnParamID = "REVERB_ON";
+                break;
+            case chorusEffect:
+                effectOnParamID = "CHORUS_ON";
+                break;
+            case distortionEffect:
+                effectOnParamID = "DIST_ON";
+                break;
+            default:
+                break;
+        }
+        
+        if (!effectOnParamID.isEmpty()) {
+            if (auto* onOffParameter = apvts.getParameter(effectOnParamID)) {
+                onOffParameter->beginChangeGesture();
+                onOffParameter->setValueNotifyingHost(1.0f); // Turn ON
+                onOffParameter->endChangeGesture();
+            }
+        }
+    }
 }
 
 bool EffectsRackModule::isEffectSelectedInAnotherSlot(int slotIndex, int effectChoice) const {
