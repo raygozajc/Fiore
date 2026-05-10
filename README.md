@@ -11,6 +11,7 @@ Fiore is a synthesizer plugin built with [JUCE](https://juce.com). Its layout an
 - Two **LFOs** for filter cutoff modulation and vibrato, respectively
 - 16-voice polyphony
 - 4 Insert Effects (new from this fork)
+- Configured for Standalone mode by default
 
 Forked from: https://github.com/calewolf/Fiore
 https://github.com/calewolf/Fiore
