@@ -2,6 +2,7 @@
 
 #include <JuceHeader.h>
 #include "DelayEffect.h"
+#include "ReverbEffect.h"
 #include "SynthVoice.h"
 
 /**
@@ -42,6 +43,7 @@ private:
     juce::Synthesiser synth;
     juce::AudioProcessorValueTreeState apvts;
     DelayEffect outputDelay;
+    ReverbEffect outputReverb;
     
     juce::AudioProcessorValueTreeState::ParameterLayout createParams();
     void updateParams();

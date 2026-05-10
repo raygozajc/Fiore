@@ -54,6 +54,7 @@ target_sources(Fiore
         Source/FilterModule.cpp
         Source/LFOVibratoModule.cpp
         Source/OscillatorModule.cpp
+        Source/ReverbEffect.cpp
         Source/SynthVoice.cpp
         Source/PluginProcessor.cpp
         Source/PluginEditor.cpp

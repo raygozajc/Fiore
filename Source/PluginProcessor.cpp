@@ -25,6 +25,7 @@ FioreAudioProcessor::~FioreAudioProcessor() {}
 void FioreAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock) {
     synth.setCurrentPlaybackSampleRate(sampleRate);
     outputDelay.prepare(sampleRate, samplesPerBlock, getTotalNumOutputChannels());
+    outputReverb.prepare(sampleRate, samplesPerBlock, getTotalNumOutputChannels());
     
     for (int i = 0; i < synth.getNumVoices(); i++) {
         if (auto voice = dynamic_cast<SynthVoice*>(synth.getVoice(i))) {
@@ -69,6 +70,12 @@ juce::AudioProcessorValueTreeState::ParameterLayout FioreAudioProcessor::createP
     juce::NormalisableRange<float> delayMixRange {0.0f, 100.0f, 1.0f};
     params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("DELAY_FEEDBACK", 1), "Delay Feedback", delayFeedbackRange, 35.0f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("DELAY_MIX", 1), "Delay Mix", delayMixRange, 25.0f));
+
+    juce::NormalisableRange<float> reverbPercentRange {0.0f, 100.0f, 1.0f};
+    params.push_back(std::make_unique<juce::AudioParameterBool>(ParameterID("REVERB_ON", 1), "Reverb On/Off", true));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("REVERB_ROOM", 1), "Reverb Room Size", reverbPercentRange, 40.0f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("REVERB_DAMPING", 1), "Reverb Damping", reverbPercentRange, 50.0f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("REVERB_MIX", 1), "Reverb Mix", reverbPercentRange, 20.0f));
     
     // LFO/Vibrato Module Params
     juce::NormalisableRange<float> rateRange {0.01f, 200.0f, 0.01f};
@@ -178,6 +185,12 @@ void FioreAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
     const auto delayFeedback = apvts.getRawParameterValue("DELAY_FEEDBACK")->load() / 100.0f;
     const auto delayWet = apvts.getRawParameterValue("DELAY_MIX")->load() / 100.0f;
     outputDelay.process(buffer, delayIsOn, delayTimeMs, delayFeedback, delayWet);
+
+    const auto reverbIsOn = apvts.getRawParameterValue("REVERB_ON")->load() > 0.5f;
+    const auto reverbRoom = apvts.getRawParameterValue("REVERB_ROOM")->load() / 100.0f;
+    const auto reverbDamping = apvts.getRawParameterValue("REVERB_DAMPING")->load() / 100.0f;
+    const auto reverbWet = apvts.getRawParameterValue("REVERB_MIX")->load() / 100.0f;
+    outputReverb.process(buffer, reverbIsOn, reverbRoom, reverbDamping, reverbWet);
 }
 
 void FioreAudioProcessor::releaseResources() {
@@ -220,7 +233,7 @@ bool FioreAudioProcessor::isMidiEffect() const {
 }
 
 double FioreAudioProcessor::getTailLengthSeconds() const {
-    return DelayEffect::maxDelayTimeSeconds;
+    return std::max(static_cast<double> (DelayEffect::maxDelayTimeSeconds), ReverbEffect::tailLengthSeconds);
 }
 
 int FioreAudioProcessor::getNumPrograms() {

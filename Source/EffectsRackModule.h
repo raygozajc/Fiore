@@ -30,15 +30,23 @@ private:
     juce::Label moduleLabel;
     juce::Label delaySlotLabel;
     juce::TextButton delayOnButton {"On"};
+    juce::Label reverbSlotLabel;
+    juce::TextButton reverbOnButton {"On"};
 
     juce::Label delayTimeLabel, delayFeedbackLabel, delayMixLabel;
     juce::Label delayTimeValueLabel, delayFeedbackValueLabel, delayMixValueLabel;
     juce::Slider delayTimeSlider, delayFeedbackSlider, delayMixSlider;
 
-    juce::Label emptySlot2, emptySlot3, emptySlot4;
+    juce::Label reverbRoomLabel, reverbDampingLabel, reverbMixLabel;
+    juce::Label reverbRoomValueLabel, reverbDampingValueLabel, reverbMixValueLabel;
+    juce::Slider reverbRoomSlider, reverbDampingSlider, reverbMixSlider;
+
+    juce::Label emptySlot3, emptySlot4;
 
     std::unique_ptr<ButtonAttachment> delayOnAttachment;
     std::unique_ptr<SliderAttachment> delayTimeAttachment, delayFeedbackAttachment, delayMixAttachment;
+    std::unique_ptr<ButtonAttachment> reverbOnAttachment;
+    std::unique_ptr<SliderAttachment> reverbRoomAttachment, reverbDampingAttachment, reverbMixAttachment;
 
     juce::AudioProcessorValueTreeState& apvts;
 
