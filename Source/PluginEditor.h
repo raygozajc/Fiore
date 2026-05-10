@@ -8,6 +8,7 @@
 #include "AmpModule.h"
 #include "LFOVibratoModule.h"
 #include "EnvModule.h"
+#include "EffectsRackModule.h"
 
 /**
     The main entrypoint for the synth's GUI. Contains subcomponents for each module of the synth.
@@ -27,6 +28,7 @@ class Editor: public AudioProcessorEditor {
         LFOVibratoModule lfoVibratoModule;
         EnvModule envModule;
         AmpModule ampModule;
+        EffectsRackModule effectsRackModule;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Editor)
 };

@@ -3,15 +3,16 @@
 
 Editor::Editor (FioreAudioProcessor& p):
         AudioProcessorEditor (&p), audioProcessor (p),
-oscModule(p.getAPVTS()), filterModule(p.getAPVTS()), lfoVibratoModule(p.getAPVTS()), envModule(p.getAPVTS()), ampModule(p.getAPVTS())
+oscModule(p.getAPVTS()), filterModule(p.getAPVTS()), lfoVibratoModule(p.getAPVTS()), envModule(p.getAPVTS()), ampModule(p.getAPVTS()), effectsRackModule(p.getAPVTS())
 {
     addAndMakeVisible(oscModule);
     addAndMakeVisible(filterModule);
     addAndMakeVisible(ampModule);
     addAndMakeVisible(lfoVibratoModule);
     addAndMakeVisible(envModule);
+    addAndMakeVisible(effectsRackModule);
     
-    setSize (770, 615);
+    setSize (1155, 615);
 }
 
 Editor::~Editor() {
@@ -19,6 +20,10 @@ Editor::~Editor() {
 
 void Editor::resized() {
     auto area = getLocalBounds().reduced(5);
+
+    auto effectsArea = area.removeFromRight(380);
+    area.removeFromRight(5);
+    effectsRackModule.setBounds(effectsArea);
     
     auto topRow = area.removeFromTop(300);
     area.removeFromTop(5);

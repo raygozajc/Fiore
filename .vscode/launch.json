@@ -9,7 +9,7 @@
             "args": [],
             "cwd": "${workspaceFolder}",
             "MIMode": "lldb",
-            "preLaunchTask": "Compilar",
+            "preLaunchTask": "Build",
             "externalConsole": false
         }
     ]

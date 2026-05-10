@@ -25,14 +25,14 @@ void OscillatorModule::configureRadioButton(juce::ToggleButton& button, RadioGro
     button.setToggleState(isOn, juce::dontSendNotification);
 }
 
-OscillatorModule::OscillatorModule(juce::AudioProcessorValueTreeState& apvts): apvts(apvts) {
+OscillatorModule::OscillatorModule(juce::AudioProcessorValueTreeState& processorState): apvts(processorState) {
     // Oscillator shape radio buttons (and labels)
     addAndMakeVisible(osc1ShapeMenuLabel);
     osc1ShapeMenuLabel.setText("OSC 1", juce::dontSendNotification);
-    osc1ShapeMenuLabel.setFont(juce::Font (16.0f, juce::Font::bold));
+    osc1ShapeMenuLabel.setFont(juce::Font (juce::FontOptions (16.0f, juce::Font::bold)));
     addAndMakeVisible(osc2ShapeMenuLabel);
     osc2ShapeMenuLabel.setText("OSC 2", juce::dontSendNotification);
-    osc2ShapeMenuLabel.setFont(juce::Font (16.0f, juce::Font::bold));
+    osc2ShapeMenuLabel.setFont(juce::Font (juce::FontOptions (16.0f, juce::Font::bold)));
     
     configureRadioButton(sawButton1, RadioGroupID::Osc1, true);
     configureRadioButton(squareButton1, RadioGroupID::Osc1);
@@ -68,11 +68,11 @@ OscillatorModule::OscillatorModule(juce::AudioProcessorValueTreeState& apvts): a
     // Big text label
     addAndMakeVisible(oscillatorModuleLabel);
     oscillatorModuleLabel.setText("OSCILLATOR", juce::dontSendNotification);
-    oscillatorModuleLabel.setFont(juce::Font (16.0f, juce::Font::bold));
+    oscillatorModuleLabel.setFont(juce::Font (juce::FontOptions (16.0f, juce::Font::bold)));
     oscillatorModuleLabel.setJustificationType(juce::Justification::centred);
 }
 
-OscillatorModule::~OscillatorModule() {};
+OscillatorModule::~OscillatorModule() {}
 
 void OscillatorModule::paint(juce::Graphics& g) {
     g.fillAll(juce::Colours::slategrey);
@@ -143,10 +143,10 @@ void OscillatorModule::resized() {
     juce::FlexBox parentFlexBox;
     parentFlexBox.justifyContent = FlexBox::JustifyContent::spaceAround;
     parentFlexBox.items = {
-        FlexItem(70, area.getHeight(), fb0),
-        FlexItem(80, area.getHeight(), fb1),
-        FlexItem(80, area.getHeight(), fb2),
-        FlexItem(70, area.getHeight(), fb3)
+        FlexItem(70.0f, static_cast<float> (area.getHeight()), fb0),
+        FlexItem(80.0f, static_cast<float> (area.getHeight()), fb1),
+        FlexItem(80.0f, static_cast<float> (area.getHeight()), fb2),
+        FlexItem(70.0f, static_cast<float> (area.getHeight()), fb3)
     };
     parentFlexBox.performLayout(area.toFloat());
 }

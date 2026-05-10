@@ -7,7 +7,7 @@
 */
 class FilterModule: public juce::Component, public juce::Button::Listener {
     public:
-        FilterModule(juce::AudioProcessorValueTreeState& apvts);
+        FilterModule(juce::AudioProcessorValueTreeState& processorState);
         ~FilterModule() override;
         void paint (juce::Graphics&) override;
         void resized() override;

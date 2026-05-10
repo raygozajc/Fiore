@@ -41,10 +41,16 @@ juce_add_plugin(Fiore
 
 juce_generate_juce_header(Fiore)
 
+if(TARGET Fiore_vst3_helper)
+    target_compile_options(Fiore_vst3_helper PRIVATE -Wno-deprecated-declarations)
+endif()
+
 target_sources(Fiore
     PRIVATE
         Source/AmpModule.cpp
+        Source/DelayEffect.cpp
         Source/EnvModule.cpp
+        Source/EffectsRackModule.cpp
         Source/FilterModule.cpp
         Source/LFOVibratoModule.cpp
         Source/OscillatorModule.cpp

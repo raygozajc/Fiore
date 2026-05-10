@@ -24,6 +24,7 @@ FioreAudioProcessor::~FioreAudioProcessor() {}
 
 void FioreAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock) {
     synth.setCurrentPlaybackSampleRate(sampleRate);
+    outputDelay.prepare(sampleRate, samplesPerBlock, getTotalNumOutputChannels());
     
     for (int i = 0; i < synth.getNumVoices(); i++) {
         if (auto voice = dynamic_cast<SynthVoice*>(synth.getVoice(i))) {
@@ -55,13 +56,23 @@ juce::AudioProcessorValueTreeState::ParameterLayout FioreAudioProcessor::createP
     params.push_back(std::make_unique<juce::AudioParameterBool>(ParameterID("FILT_ON_OFF", 1), "Filter On/Off", true));
     
     // Amp Module Params
-    juce::NormalisableRange<float> gainRange {-84.0, 12.0, 0.1};
-    gainRange.setSkewForCentre(-9.0);
+    juce::NormalisableRange<float> gainRange {-84.0f, 12.0f, 0.1f};
+    gainRange.setSkewForCentre(-9.0f);
     params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("GAIN", 1), "Global Gain", gainRange, 0.0));
+
+    // Insert FX Params
+    juce::NormalisableRange<float> delayTimeRange {1.0f, DelayEffect::maxDelayTimeSeconds * 1000.0f, 1.0f};
+    delayTimeRange.setSkewForCentre(350.0f);
+    params.push_back(std::make_unique<juce::AudioParameterBool>(ParameterID("DELAY_ON", 1), "Delay On/Off", true));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("DELAY_TIME", 1), "Delay Time", delayTimeRange, 350.0f));
+    juce::NormalisableRange<float> delayFeedbackRange {0.0f, 95.0f, 1.0f};
+    juce::NormalisableRange<float> delayMixRange {0.0f, 100.0f, 1.0f};
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("DELAY_FEEDBACK", 1), "Delay Feedback", delayFeedbackRange, 35.0f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("DELAY_MIX", 1), "Delay Mix", delayMixRange, 25.0f));
     
     // LFO/Vibrato Module Params
-    juce::NormalisableRange<float> rateRange {0.01, 200.0, 0.01};
-    rateRange.setSkewForCentre(15.0);
+    juce::NormalisableRange<float> rateRange {0.01f, 200.0f, 0.01f};
+    rateRange.setSkewForCentre(15.0f);
     juce::StringArray lfoShapeOptions { "Saw Up", "Saw Down", "Tri", "Square"};
     params.push_back(std::make_unique<juce::AudioParameterChoice>(ParameterID("LFO_SHAPE", 1), "Filter LFO Shape", lfoShapeOptions, 2));
     params.push_back(std::make_unique<juce::AudioParameterInt>(ParameterID("LFO_AMOUNT", 1), "Filter LFO Amount", 0, 100, 0));
@@ -71,13 +82,13 @@ juce::AudioProcessorValueTreeState::ParameterLayout FioreAudioProcessor::createP
     params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("VIB_RATE", 1), "Vibrato Rate", rateRange, 5.0));
     
     // ADSR Module Params
-    juce::NormalisableRange<float> attackRange {0.0001, 10.0, 0.0001}; // sec
-    juce::NormalisableRange<float> decayRange {0.0001, 10.0, 0.0001}; // sec
+    juce::NormalisableRange<float> attackRange {0.0001f, 10.0f, 0.0001f}; // sec
+    juce::NormalisableRange<float> decayRange {0.0001f, 10.0f, 0.0001f}; // sec
     juce::NormalisableRange<float> sustainRange {1, 100, 1}; // %
-    juce::NormalisableRange<float> releaseRange {0.001, 10.0, 0.001}; // sec
-    attackRange.setSkewForCentre(0.41);
-    decayRange.setSkewForCentre(0.41);
-    releaseRange.setSkewForCentre(0.5);
+    juce::NormalisableRange<float> releaseRange {0.001f, 10.0f, 0.001f}; // sec
+    attackRange.setSkewForCentre(0.41f);
+    decayRange.setSkewForCentre(0.41f);
+    releaseRange.setSkewForCentre(0.5f);
     params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("AMP_ATK", 1), "Amp Attack", attackRange, 0.0004));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("AMP_DEC", 1), "Amp Decay", decayRange, 0.520));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("AMP_SUS", 1), "Amp Sustain", sustainRange, 75));
@@ -101,22 +112,22 @@ void FioreAudioProcessor::updateParams() {
             auto& osc1DetuneCents = *apvts.getRawParameterValue("DETUNE_CENTS_1");
             auto& osc2DetuneCents = *apvts.getRawParameterValue("DETUNE_CENTS");
             auto& osc2DetuneSemi = *apvts.getRawParameterValue("DETUNE_SEMI");
-            double sineLevel = *apvts.getRawParameterValue("SINE_LVL") / 100.0;
-            voice->setOscWaveform(osc1Choice.load(), 1);
-            voice->setOscWaveform(osc2Choice.load(), 2);
+            auto sineLevel = apvts.getRawParameterValue("SINE_LVL")->load() / 100.0f;
+            voice->setOscWaveform(juce::roundToInt(osc1Choice.load()), 1);
+            voice->setOscWaveform(juce::roundToInt(osc2Choice.load()), 2);
             voice->setOscGainRatios(osc1GainRatio.load());
-            voice->setOscDetune(0, osc1DetuneCents, 1);
-            voice->setOscDetune(osc2DetuneSemi, osc2DetuneCents, 2);
+            voice->setOscDetune(0, juce::roundToInt(osc1DetuneCents.load()), 1);
+            voice->setOscDetune(juce::roundToInt(osc2DetuneSemi.load()), juce::roundToInt(osc2DetuneCents.load()), 2);
             voice->setOscSineLevel(sineLevel);
             
             // Filter Module Params
             auto& filtType = *apvts.getRawParameterValue("FILT_TYPE");
             auto& filtCutoff = *apvts.getRawParameterValue("FILT_CUTOFF");
-            double filtReso = *apvts.getRawParameterValue("FILT_RESO") / 100.0;
-            double filtDriveAmt = *apvts.getRawParameterValue("FILT_DRIVE_AMT") / 100.0;
-            double filtEnvAmt = *apvts.getRawParameterValue("FILT_ENV_AMT") / 100.0;
-            bool filtOn = *apvts.getRawParameterValue("FILT_ON_OFF");
-            voice->setFilterType(filtType.load());
+            auto filtReso = apvts.getRawParameterValue("FILT_RESO")->load() / 100.0f;
+            auto filtDriveAmt = apvts.getRawParameterValue("FILT_DRIVE_AMT")->load() / 100.0f;
+            auto filtEnvAmt = apvts.getRawParameterValue("FILT_ENV_AMT")->load() / 100.0f;
+            auto filtOn = apvts.getRawParameterValue("FILT_ON_OFF")->load() > 0.5f;
+            voice->setFilterType(juce::roundToInt(filtType.load()));
             voice->setFilterParams(filtCutoff.load(), filtReso, filtDriveAmt, filtEnvAmt);
             voice->setFilterOnOff(filtOn);
             
@@ -126,22 +137,22 @@ void FioreAudioProcessor::updateParams() {
             
             // LFO/Vibrato Module Params
             auto& lfoShape = *apvts.getRawParameterValue("LFO_SHAPE");
-            double lfoAmount = *apvts.getRawParameterValue("LFO_AMOUNT") / 100.0;
+            auto lfoAmount = apvts.getRawParameterValue("LFO_AMOUNT")->load() / 100.0f;
             auto& lfoRate = *apvts.getRawParameterValue("LFO_RATE");
             auto& vibratoShape = *apvts.getRawParameterValue("VIB_SHAPE");
-            double vibratoAmount = *apvts.getRawParameterValue("VIB_AMOUNT") / 100.0;
+            auto vibratoAmount = apvts.getRawParameterValue("VIB_AMOUNT")->load() / 100.0f;
             auto& vibratoRate = *apvts.getRawParameterValue("VIB_RATE");
-            voice->setLFOParams(lfoShape, lfoAmount, lfoRate, 1);
-            voice->setLFOParams(vibratoShape, vibratoAmount, vibratoRate, 2);
+            voice->setLFOParams(juce::roundToInt(lfoShape.load()), lfoAmount, lfoRate.load(), 1);
+            voice->setLFOParams(juce::roundToInt(vibratoShape.load()), vibratoAmount, vibratoRate.load(), 2);
             
             // ADSR Module Params
             auto& ampAtk = *apvts.getRawParameterValue("AMP_ATK");
             auto& ampDecay = *apvts.getRawParameterValue("AMP_DEC");
-            double ampSus = (*apvts.getRawParameterValue("AMP_SUS")) / 100.0;
+            auto ampSus = apvts.getRawParameterValue("AMP_SUS")->load() / 100.0f;
             auto& ampRel = *apvts.getRawParameterValue("AMP_REL");
             auto& filtAtk = *apvts.getRawParameterValue("FILT_ATK");
             auto& filtDecay = *apvts.getRawParameterValue("FILT_DEC");
-            double filtSus = (*apvts.getRawParameterValue("FILT_SUS")) / 100.0;
+            auto filtSus = apvts.getRawParameterValue("FILT_SUS")->load() / 100.0f;
             auto& filtRel = *apvts.getRawParameterValue("FILT_REL");
             voice->setAmpADSR(ampAtk.load(), ampDecay.load(), ampSus, ampRel.load());
             voice->setFilterADSR(filtAtk.load(), filtDecay.load(), filtSus, filtRel.load());
@@ -161,6 +172,12 @@ void FioreAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
     
     // Get audio from the synth. Will call renderNextBlock for all the synth voices
     synth.renderNextBlock(buffer, midiMessages, 0, buffer.getNumSamples());
+
+    const auto delayIsOn = apvts.getRawParameterValue("DELAY_ON")->load() > 0.5f;
+    const auto delayTimeMs = apvts.getRawParameterValue("DELAY_TIME")->load();
+    const auto delayFeedback = apvts.getRawParameterValue("DELAY_FEEDBACK")->load() / 100.0f;
+    const auto delayWet = apvts.getRawParameterValue("DELAY_MIX")->load() / 100.0f;
+    outputDelay.process(buffer, delayIsOn, delayTimeMs, delayFeedback, delayWet);
 }
 
 void FioreAudioProcessor::releaseResources() {
@@ -203,7 +220,7 @@ bool FioreAudioProcessor::isMidiEffect() const {
 }
 
 double FioreAudioProcessor::getTailLengthSeconds() const {
-    return 0.0;
+    return DelayEffect::maxDelayTimeSeconds;
 }
 
 int FioreAudioProcessor::getNumPrograms() {
@@ -216,13 +233,16 @@ int FioreAudioProcessor::getCurrentProgram() {
 }
 
 void FioreAudioProcessor::setCurrentProgram (int index) {
+    juce::ignoreUnused(index);
 }
 
 const juce::String FioreAudioProcessor::getProgramName (int index) {
+    juce::ignoreUnused(index);
     return {};
 }
 
 void FioreAudioProcessor::changeProgramName (int index, const juce::String& newName) {
+    juce::ignoreUnused(index, newName);
 }
 
 #ifndef JucePlugin_PreferredChannelConfigurations

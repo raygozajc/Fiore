@@ -7,7 +7,7 @@
 */
 class OscillatorModule: public juce::Component, Button::Listener {
     public:
-        OscillatorModule(juce::AudioProcessorValueTreeState& apvts);
+        OscillatorModule(juce::AudioProcessorValueTreeState& processorState);
         ~OscillatorModule() override;
         void paint(juce::Graphics&) override;
         void resized() override;

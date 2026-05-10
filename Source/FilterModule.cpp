@@ -18,7 +18,7 @@ void FilterModule::configureLabel(juce::Component& slider, juce::Label& label, c
     label.attachToComponent(&slider, false);
 }
 
-FilterModule::FilterModule(juce::AudioProcessorValueTreeState& apvts): apvts(apvts) {
+FilterModule::FilterModule(juce::AudioProcessorValueTreeState& processorState): apvts(processorState) {
     // On-off button
     addAndMakeVisible(onOffButton);
     onOffButton.setToggleable(true);
@@ -57,7 +57,7 @@ FilterModule::FilterModule(juce::AudioProcessorValueTreeState& apvts): apvts(apv
     // Big text label
     addAndMakeVisible(filterModuleLabel);
     filterModuleLabel.setText("FILTER", juce::dontSendNotification);
-    filterModuleLabel.setFont(juce::Font (16.0f, juce::Font::bold));
+    filterModuleLabel.setFont(juce::Font (juce::FontOptions (16.0f, juce::Font::bold)));
     filterModuleLabel.setJustificationType(juce::Justification::centred);
 }
 
@@ -110,9 +110,9 @@ void FilterModule::resized() {
     parentFlexBox.flexDirection = FlexBox::Direction::column;
     parentFlexBox.justifyContent = FlexBox::JustifyContent::spaceBetween;
     parentFlexBox.items = {
-        FlexItem(area.getWidth(), 24, row1),
-        FlexItem(area.getWidth(), 48, row2),
-        FlexItem(area.getWidth(), 104, row3)
+        FlexItem(static_cast<float> (area.getWidth()), 24.0f, row1),
+        FlexItem(static_cast<float> (area.getWidth()), 48.0f, row2),
+        FlexItem(static_cast<float> (area.getWidth()), 104.0f, row3)
     };
     parentFlexBox.performLayout(area.toFloat());
 }

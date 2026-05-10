@@ -1,6 +1,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "DelayEffect.h"
 #include "SynthVoice.h"
 
 /**
@@ -40,6 +41,7 @@ public:
 private:
     juce::Synthesiser synth;
     juce::AudioProcessorValueTreeState apvts;
+    DelayEffect outputDelay;
     
     juce::AudioProcessorValueTreeState::ParameterLayout createParams();
     void updateParams();

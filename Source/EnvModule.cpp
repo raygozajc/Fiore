@@ -1,11 +1,11 @@
 #include <JuceHeader.h>
 #include "EnvModule.h"
 
-EnvTab::EnvTab(const String& title, juce::AudioProcessorValueTreeState& apvts, const String& paramIdPrefix): apvts(apvts) {
+EnvTab::EnvTab(const String& title, juce::AudioProcessorValueTreeState& processorState, const String& paramIdPrefix): apvts(processorState) {
     // Title label
     addAndMakeVisible(titleLabel);
     titleLabel.setText(title, juce::dontSendNotification);
-    titleLabel.setFont(juce::Font (16.0f, juce::Font::bold));
+    titleLabel.setFont(juce::Font (juce::FontOptions (16.0f, juce::Font::bold)));
     titleLabel.setJustificationType(juce::Justification::centred);
     
     // Attack
@@ -54,8 +54,8 @@ void EnvTab::resized() {
     auto area = getLocalBounds();
     titleLabel.setBounds(area.removeFromBottom(area.getHeight() / 10));
     
-    area.removeFromLeft(area.getWidth() * 0.1);
-    area.removeFromRight(area.getWidth() * 0.1);
+    area.removeFromLeft(static_cast<int> (area.getWidth() * 0.1));
+    area.removeFromRight(static_cast<int> (area.getWidth() * 0.1));
     
     juce::FlexBox fb;
     fb.justifyContent = FlexBox::JustifyContent::spaceAround;
@@ -73,7 +73,7 @@ void EnvTab::resized() {
 
 // EnvModule stuff
 
-EnvModule::EnvModule(juce::AudioProcessorValueTreeState& apvts): ampEnvTab("AMP ENV", apvts, "AMP"), filterEnvTab("FILTER ENV", apvts, "FILT") {
+EnvModule::EnvModule(juce::AudioProcessorValueTreeState& processorState): ampEnvTab("AMP ENV", processorState, "AMP"), filterEnvTab("FILTER ENV", processorState, "FILT") {
     addAndMakeVisible(tabs);
     tabs.addTab("Amplitude Env", juce::Colours::slategrey, &ampEnvTab, false);
     tabs.addTab("Filter Env", juce::Colours::slategrey.darker(), &filterEnvTab, false);

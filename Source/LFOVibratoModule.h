@@ -6,8 +6,8 @@
 */
 class LFOTab: public juce::Component, Button::Listener {
     public:
-        LFOTab(const String& title, juce::AudioProcessorValueTreeState& apvts, const String& paramIdPrefix);
-        ~LFOTab();
+        LFOTab(const String& title, juce::AudioProcessorValueTreeState& processorState, const String& parameterPrefix);
+        ~LFOTab() override;
         void paint (juce::Graphics&) override;
         void resized() override;
         void buttonClicked(Button* button) override;
@@ -40,7 +40,7 @@ class LFOTab: public juce::Component, Button::Listener {
 */
 class LFOVibratoModule: public juce::Component {
     public:
-        LFOVibratoModule(juce::AudioProcessorValueTreeState& apvts);
+        LFOVibratoModule(juce::AudioProcessorValueTreeState& processorState);
         ~LFOVibratoModule() override;
         void paint (juce::Graphics&) override;
         void resized() override;
