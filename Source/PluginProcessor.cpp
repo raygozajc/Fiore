@@ -28,6 +28,7 @@ void FioreAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
     outputReverb.prepare(sampleRate, samplesPerBlock, getTotalNumOutputChannels());
     outputChorus.prepare(sampleRate, samplesPerBlock, getTotalNumOutputChannels());
     outputDistortion.prepare(sampleRate, samplesPerBlock, getTotalNumOutputChannels());
+    outputFlanger.prepare(sampleRate, samplesPerBlock, getTotalNumOutputChannels());
     
     for (int i = 0; i < synth.getNumVoices(); i++) {
         if (auto voice = dynamic_cast<SynthVoice*>(synth.getVoice(i))) {
@@ -64,7 +65,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout FioreAudioProcessor::createP
     params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("GAIN", 1), "Global Gain", gainRange, 0.0));
 
     // Insert FX Params
-    juce::StringArray insertEffectChoices { "None", "Delay", "Reverb", "Chorus", "Dist" };
+    juce::StringArray insertEffectChoices { "None", "Delay", "Reverb", "Chorus", "Dist", "Phaser" };
     params.push_back(std::make_unique<juce::AudioParameterChoice>(ParameterID("INSERT_SLOT_1", 1), "Insert Slot 1", insertEffectChoices, 1));
     params.push_back(std::make_unique<juce::AudioParameterChoice>(ParameterID("INSERT_SLOT_2", 1), "Insert Slot 2", insertEffectChoices, 2));
     params.push_back(std::make_unique<juce::AudioParameterChoice>(ParameterID("INSERT_SLOT_3", 1), "Insert Slot 3", insertEffectChoices, 3));
@@ -95,6 +96,11 @@ juce::AudioProcessorValueTreeState::ParameterLayout FioreAudioProcessor::createP
     params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("CHORUS_RATE", 1), "Chorus Rate", chorusRateRange, 0.7f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("CHORUS_DEPTH", 1), "Chorus Depth", chorusDepthRange, 25.0f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("CHORUS_MIX", 1), "Chorus Mix", chorusMixRange, 18.0f));
+
+    params.push_back(std::make_unique<juce::AudioParameterBool>(ParameterID("PHASER_ON", 1), "Phaser On/Off", true));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("PHASER_RATE", 1), "Phaser Rate", chorusRateRange, 0.7f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("PHASER_DEPTH", 1), "Phaser Depth", chorusDepthRange, 35.0f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("PHASER_MIX", 1), "Phaser Mix", chorusMixRange, 22.0f));
 
     juce::NormalisableRange<float> distortionPercentRange {0.0f, 100.0f, 1.0f};
     juce::NormalisableRange<float> distortionMixRange {0.0f, 80.0f, 1.0f};
@@ -238,6 +244,14 @@ void FioreAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
                 const auto distortionTone = apvts.getRawParameterValue("DIST_TONE")->load() / 100.0f;
                 const auto distortionWet = apvts.getRawParameterValue("DIST_MIX")->load() / 100.0f;
                 outputDistortion.process(buffer, distortionIsOn, distortionDrive, distortionTone, distortionWet);
+                break;
+            }
+            case 5: {
+                const auto phaserIsOn = apvts.getRawParameterValue("PHASER_ON")->load() > 0.5f;
+                const auto phaserRate = apvts.getRawParameterValue("PHASER_RATE")->load();
+                const auto phaserDepth = apvts.getRawParameterValue("PHASER_DEPTH")->load() / 100.0f;
+                const auto phaserWet = apvts.getRawParameterValue("PHASER_MIX")->load() / 100.0f;
+                outputFlanger.process(buffer, phaserIsOn, phaserRate, phaserDepth, phaserWet);
                 break;
             }
             default:

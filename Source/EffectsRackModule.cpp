@@ -87,6 +87,24 @@ EffectsRackModule::EffectsRackModule(juce::AudioProcessorValueTreeState& process
     configureSlider(distortionToneSlider, distortionToneLabel, distortionToneValueLabel, "Tone", "%", 0, 65.0, "DIST_TONE", distortionToneAttachment);
     configureSlider(distortionMixSlider, distortionMixLabel, distortionMixValueLabel, "Mix", "%", 0, 45.0, "DIST_MIX", distortionMixAttachment);
 
+    addAndMakeVisible(phaserSlotLabel);
+    phaserSlotLabel.setText("PHASER", juce::dontSendNotification);
+    phaserSlotLabel.setFont(juce::Font (juce::FontOptions (14.0f, juce::Font::bold)));
+    phaserSlotLabel.setJustificationType(juce::Justification::centredLeft);
+
+    addAndMakeVisible(phaserOnButton);
+    phaserOnButton.setToggleable(true);
+    phaserOnButton.setClickingTogglesState(true);
+    phaserOnButton.setToggleState(false, juce::dontSendNotification);
+    phaserOnButton.onClick = [this] {
+        phaserOnButton.setButtonText(phaserOnButton.getToggleState() ? "On" : "Off");
+    };
+    phaserOnAttachment = std::make_unique<ButtonAttachment>(apvts, "PHASER_ON", phaserOnButton);
+
+    configureSlider(phaserRateSlider, phaserRateLabel, phaserRateValueLabel, "Rate", " Hz", 1, 0.7, "PHASER_RATE", phaserRateAttachment);
+    configureSlider(phaserDepthSlider, phaserDepthLabel, phaserDepthValueLabel, "Depth", "%", 0, 35.0, "PHASER_DEPTH", phaserDepthAttachment);
+    configureSlider(phaserMixSlider, phaserMixLabel, phaserMixValueLabel, "Mix", "%", 0, 22.0, "PHASER_MIX", phaserMixAttachment);
+
     for (int slot = 0; slot < numSlots; ++slot)
         apvts.addParameterListener(getSlotParamID(slot), this);
 
@@ -211,6 +229,9 @@ void EffectsRackModule::setSlotSelection(int slotIndex, int effectChoice) {
             case distortionEffect:
                 effectOnParamID = "DIST_ON";
                 break;
+            case phaserEffect:
+                effectOnParamID = "PHASER_ON";
+                break;
             default:
                 break;
         }
@@ -238,7 +259,7 @@ bool EffectsRackModule::isEffectSelectedInAnotherSlot(int slotIndex, int effectC
 }
 
 void EffectsRackModule::updateSlotMenus() {
-    static const juce::StringArray effectNames { "None", "Delay", "Reverb", "Chorus", "Dist" };
+    static const juce::StringArray effectNames { "None", "Delay", "Reverb", "Chorus", "Dist", "Phaser" };
 
     updatingSlotMenus = true;
 
@@ -249,7 +270,7 @@ void EffectsRackModule::updateSlotMenus() {
         menu.clear(juce::dontSendNotification);
         menu.addItem(effectNames[noEffect], noEffect + 1);
 
-        for (int effect = delayEffect; effect <= distortionEffect; ++effect) {
+        for (int effect = delayEffect; effect <= phaserEffect; ++effect) {
             if (effect == selectedEffect || ! isEffectSelectedInAnotherSlot(slot, effect))
                 menu.addItem(effectNames[effect], effect + 1);
         }
@@ -318,10 +339,25 @@ void EffectsRackModule::updateEffectVisibility() {
         distortionMixValueLabel.setVisible(shouldShow);
     };
 
+    const auto showPhaser = [this] (bool shouldShow) {
+        phaserSlotLabel.setVisible(shouldShow);
+        phaserOnButton.setVisible(shouldShow);
+        phaserRateLabel.setVisible(shouldShow);
+        phaserRateSlider.setVisible(shouldShow);
+        phaserRateValueLabel.setVisible(shouldShow);
+        phaserDepthLabel.setVisible(shouldShow);
+        phaserDepthSlider.setVisible(shouldShow);
+        phaserDepthValueLabel.setVisible(shouldShow);
+        phaserMixLabel.setVisible(shouldShow);
+        phaserMixSlider.setVisible(shouldShow);
+        phaserMixValueLabel.setVisible(shouldShow);
+    };
+
     showDelay(false);
     showReverb(false);
     showChorus(false);
     showDistortion(false);
+    showPhaser(false);
 
     for (int slot = 0; slot < numSlots; ++slot) {
         switch (getSlotSelection(slot)) {
@@ -329,6 +365,7 @@ void EffectsRackModule::updateEffectVisibility() {
             case reverbEffect:     showReverb(true); break;
             case chorusEffect:     showChorus(true); break;
             case distortionEffect: showDistortion(true); break;
+            case phaserEffect:     showPhaser(true); break;
             default: break;
         }
     }
@@ -510,4 +547,21 @@ void EffectsRackModule::resized() {
                     distortionMixLabel,
                     distortionMixSlider,
                     distortionMixValueLabel);
+
+    if (const auto slot = selectedSlotForEffect(phaserEffect); slot >= 0)
+        placeEffectSlot(slots[slotToIndex(slot)],
+                    slotNumberLabels[slotToIndex(slot)],
+                    slotMenus[slotToIndex(slot)],
+                    removeSlotButtons[slotToIndex(slot)],
+                    phaserSlotLabel,
+                    phaserOnButton,
+                    phaserRateLabel,
+                    phaserRateSlider,
+                    phaserRateValueLabel,
+                    phaserDepthLabel,
+                    phaserDepthSlider,
+                    phaserDepthValueLabel,
+                    phaserMixLabel,
+                    phaserMixSlider,
+                    phaserMixValueLabel);
 }

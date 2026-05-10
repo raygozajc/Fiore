@@ -4,6 +4,7 @@
 #include "ChorusEffect.h"
 #include "DelayEffect.h"
 #include "DistortionEffect.h"
+#include "FlangerEffect.h"
 #include "ReverbEffect.h"
 #include "SynthVoice.h"
 
@@ -48,6 +49,7 @@ private:
     ReverbEffect outputReverb;
     ChorusEffect outputChorus;
     DistortionEffect outputDistortion;
+    FlangerEffect outputFlanger;
     
     juce::AudioProcessorValueTreeState::ParameterLayout createParams();
     void updateParams();

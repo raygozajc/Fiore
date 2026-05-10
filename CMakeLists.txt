@@ -51,6 +51,7 @@ target_sources(Fiore
         Source/ChorusEffect.cpp
         Source/DelayEffect.cpp
         Source/DistortionEffect.cpp
+        Source/FlangerEffect.cpp
         Source/EnvModule.cpp
         Source/EffectsRackModule.cpp
         Source/FilterModule.cpp

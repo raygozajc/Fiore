@@ -25,7 +25,8 @@ private:
         delayEffect = 1,
         reverbEffect = 2,
         chorusEffect = 3,
-        distortionEffect = 4
+        distortionEffect = 4,
+        phaserEffect = 5
     };
 
     void configureSlider(juce::Slider& slider,
@@ -60,6 +61,8 @@ private:
     juce::TextButton chorusOnButton {"On"};
     juce::Label distortionSlotLabel;
     juce::TextButton distortionOnButton {"Off"};
+    juce::Label phaserSlotLabel;
+    juce::TextButton phaserOnButton {"Off"};
 
     juce::Label delayTimeLabel, delayFeedbackLabel, delayMixLabel;
     juce::Label delayTimeValueLabel, delayFeedbackValueLabel, delayMixValueLabel;
@@ -77,6 +80,10 @@ private:
     juce::Label distortionDriveValueLabel, distortionToneValueLabel, distortionMixValueLabel;
     juce::Slider distortionDriveSlider, distortionToneSlider, distortionMixSlider;
 
+    juce::Label phaserRateLabel, phaserDepthLabel, phaserMixLabel;
+    juce::Label phaserRateValueLabel, phaserDepthValueLabel, phaserMixValueLabel;
+    juce::Slider phaserRateSlider, phaserDepthSlider, phaserMixSlider;
+
     std::unique_ptr<ButtonAttachment> delayOnAttachment;
     std::unique_ptr<SliderAttachment> delayTimeAttachment, delayFeedbackAttachment, delayMixAttachment;
     std::unique_ptr<ButtonAttachment> reverbOnAttachment;
@@ -85,6 +92,8 @@ private:
     std::unique_ptr<SliderAttachment> chorusRateAttachment, chorusDepthAttachment, chorusMixAttachment;
     std::unique_ptr<ButtonAttachment> distortionOnAttachment;
     std::unique_ptr<SliderAttachment> distortionDriveAttachment, distortionToneAttachment, distortionMixAttachment;
+    std::unique_ptr<ButtonAttachment> phaserOnAttachment;
+    std::unique_ptr<SliderAttachment> phaserRateAttachment, phaserDepthAttachment, phaserMixAttachment;
 
     juce::AudioProcessorValueTreeState& apvts;
     bool updatingSlotMenus = false;
