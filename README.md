@@ -13,6 +13,8 @@ Fiore is a synthesizer plugin built with [JUCE](https://juce.com). Its layout an
 
 I built this synth as a senior capstone project for my degree in Computer Science & Music at UIUC. 🎓
 
+raygozajc:
+
 I forked from the original repository and added insert effects and CMAKE
 
 Added CMAKE build, Added InsertEffects, and a Theme
