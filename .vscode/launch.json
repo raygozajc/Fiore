@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch Standalone",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/Fiore_artefacts/Debug/Standalone/Fiore.app/Contents/MacOS/Fiore",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "MIMode": "lldb",
+            "preLaunchTask": "Compilar",
+            "externalConsole": false
+        }
+    ]
+}

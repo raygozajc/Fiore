@@ -1,2 +1,19 @@
+# macOS
+.DS_Store
+
+# CMake build output
+build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+compile_commands.json
+cmake_install.cmake
+
+# Generated plugin artefacts
+*_artefacts/
+*.component
+*.vst3
+
+# Legacy Projucer/Xcode output
 Builds/
 JuceLibraryCode/

@@ -13,15 +13,14 @@ Fiore is a synthesizer plugin built with [JUCE](https://juce.com). Its layout an
 
 I built this synth as a senior capstone project for my degree in Computer Science & Music at UIUC. 🎓
 
-### Installation 🎛️
+### Build
 
-**Download: [VST3 or AU](https://drive.google.com/drive/folders/13Lbz1v___eVtjWiPUFKlm65ORKPyT9KW?usp=sharing)**
+To build and run the synth from its source code with CMake:
 
-If you're on MacOS, you'll need to put the `.component` or `.vst3` file into your `Library/Audio/Plug-Ins/Components` or `Library/Audio/Plug-Ins/VST3` folder. I'm not sure about installation on Windows.
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+cmake --build build --config Debug
+open "build/Fiore_artefacts/Debug/Standalone/Fiore.app"
+```
 
-To build and run the synth from it's source code:
-1. [Download JUCE](https://juce.com/get-juce/)
-2. Clone or download the code from this repository
-3. Open `Fiore.jucer` in the Projucer
-4. Open and build the project in Xcode or Visual Studio
-5. There should now be a new plugin in your system's VST/AU folder that you can run in a DAW or JUCE's AudioPluginHost.
+The CMake build downloads JUCE 8.0.10 automatically on first configure and produces Standalone, VST3, and AU targets on macOS.
