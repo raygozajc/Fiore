@@ -1,14 +1,22 @@
 #include <JuceHeader.h>
 #include "EffectsRackModule.h"
 
+namespace {
+    std::size_t slotToIndex(int slotIndex) {
+        return static_cast<std::size_t>(slotIndex);
+    }
+}
+
 EffectsRackModule::EffectsRackModule(juce::AudioProcessorValueTreeState& processorState): apvts(processorState) {
     addAndMakeVisible(moduleLabel);
     moduleLabel.setText("INSERT FX", juce::dontSendNotification);
     moduleLabel.setFont(juce::Font (juce::FontOptions (16.0f, juce::Font::bold)));
     moduleLabel.setJustificationType(juce::Justification::centred);
 
+    configureSlotControls();
+
     addAndMakeVisible(delaySlotLabel);
-    delaySlotLabel.setText("1  DELAY", juce::dontSendNotification);
+    delaySlotLabel.setText("DELAY", juce::dontSendNotification);
     delaySlotLabel.setFont(juce::Font (juce::FontOptions (14.0f, juce::Font::bold)));
     delaySlotLabel.setJustificationType(juce::Justification::centredLeft);
 
@@ -26,7 +34,7 @@ EffectsRackModule::EffectsRackModule(juce::AudioProcessorValueTreeState& process
     configureSlider(delayMixSlider, delayMixLabel, delayMixValueLabel, "Mix", "%", 0, 25.0, "DELAY_MIX", delayMixAttachment);
 
     addAndMakeVisible(reverbSlotLabel);
-    reverbSlotLabel.setText("2  REVERB", juce::dontSendNotification);
+    reverbSlotLabel.setText("REVERB", juce::dontSendNotification);
     reverbSlotLabel.setFont(juce::Font (juce::FontOptions (14.0f, juce::Font::bold)));
     reverbSlotLabel.setJustificationType(juce::Justification::centredLeft);
 
@@ -44,7 +52,7 @@ EffectsRackModule::EffectsRackModule(juce::AudioProcessorValueTreeState& process
     configureSlider(reverbMixSlider, reverbMixLabel, reverbMixValueLabel, "Mix", "%", 0, 18.0, "REVERB_MIX", reverbMixAttachment);
 
     addAndMakeVisible(chorusSlotLabel);
-    chorusSlotLabel.setText("3  CHORUS", juce::dontSendNotification);
+    chorusSlotLabel.setText("CHORUS", juce::dontSendNotification);
     chorusSlotLabel.setFont(juce::Font (juce::FontOptions (14.0f, juce::Font::bold)));
     chorusSlotLabel.setJustificationType(juce::Justification::centredLeft);
 
@@ -62,7 +70,7 @@ EffectsRackModule::EffectsRackModule(juce::AudioProcessorValueTreeState& process
     configureSlider(chorusMixSlider, chorusMixLabel, chorusMixValueLabel, "Mix", "%", 0, 18.0, "CHORUS_MIX", chorusMixAttachment);
 
     addAndMakeVisible(distortionSlotLabel);
-    distortionSlotLabel.setText("4  DIST", juce::dontSendNotification);
+    distortionSlotLabel.setText("DIST", juce::dontSendNotification);
     distortionSlotLabel.setFont(juce::Font (juce::FontOptions (14.0f, juce::Font::bold)));
     distortionSlotLabel.setJustificationType(juce::Justification::centredLeft);
 
@@ -78,9 +86,46 @@ EffectsRackModule::EffectsRackModule(juce::AudioProcessorValueTreeState& process
     configureSlider(distortionDriveSlider, distortionDriveLabel, distortionDriveValueLabel, "Drive", "%", 0, 45.0, "DIST_DRIVE", distortionDriveAttachment);
     configureSlider(distortionToneSlider, distortionToneLabel, distortionToneValueLabel, "Tone", "%", 0, 65.0, "DIST_TONE", distortionToneAttachment);
     configureSlider(distortionMixSlider, distortionMixLabel, distortionMixValueLabel, "Mix", "%", 0, 45.0, "DIST_MIX", distortionMixAttachment);
+
+    for (int slot = 0; slot < numSlots; ++slot)
+        apvts.addParameterListener(getSlotParamID(slot), this);
+
+    updateSlotMenus();
+    updateEffectVisibility();
 }
 
-EffectsRackModule::~EffectsRackModule() {}
+EffectsRackModule::~EffectsRackModule() {
+    for (int slot = 0; slot < numSlots; ++slot)
+        apvts.removeParameterListener(getSlotParamID(slot), this);
+}
+
+void EffectsRackModule::configureSlotControls() {
+    for (int slot = 0; slot < numSlots; ++slot) {
+        auto& slotLabel = slotNumberLabels[slotToIndex(slot)];
+        addAndMakeVisible(slotLabel);
+        slotLabel.setText(juce::String(slot + 1), juce::dontSendNotification);
+        slotLabel.setFont(juce::Font(juce::FontOptions(14.0f, juce::Font::bold)));
+        slotLabel.setJustificationType(juce::Justification::centred);
+
+        auto& menu = slotMenus[slotToIndex(slot)];
+        addAndMakeVisible(menu);
+        menu.setJustificationType(juce::Justification::centredLeft);
+        menu.onChange = [this, slot] {
+            if (updatingSlotMenus)
+                return;
+
+            const auto selectedEffect = slotMenus[slotToIndex(slot)].getSelectedId() - 1;
+            setSlotSelection(slot, juce::jmax(static_cast<int>(noEffect), selectedEffect));
+        };
+
+        auto& removeButton = removeSlotButtons[slotToIndex(slot)];
+        addAndMakeVisible(removeButton);
+        removeButton.setButtonText("X");
+        removeButton.onClick = [this, slot] {
+            setSlotSelection(slot, noEffect);
+        };
+    }
+}
 
 void EffectsRackModule::configureSlider(juce::Slider& slider,
                                         juce::Label& label,
@@ -117,16 +162,159 @@ void EffectsRackModule::configureSlider(juce::Slider& slider,
     updateValueLabel();
 }
 
+void EffectsRackModule::parameterChanged(const juce::String& parameterID, float newValue) {
+    juce::ignoreUnused(parameterID, newValue);
+
+    juce::Component::SafePointer<EffectsRackModule> safeThis(this);
+    juce::MessageManager::callAsync([safeThis] {
+        if (safeThis == nullptr)
+            return;
+
+        safeThis->updateSlotMenus();
+        safeThis->updateEffectVisibility();
+        safeThis->resized();
+        safeThis->repaint();
+    });
+}
+
+juce::String EffectsRackModule::getSlotParamID(int slotIndex) const {
+    return "INSERT_SLOT_" + juce::String(slotIndex + 1);
+}
+
+int EffectsRackModule::getSlotSelection(int slotIndex) const {
+    if (auto* value = apvts.getRawParameterValue(getSlotParamID(slotIndex)))
+        return juce::roundToInt(value->load());
+
+    return noEffect;
+}
+
+void EffectsRackModule::setSlotSelection(int slotIndex, int effectChoice) {
+    if (auto* parameter = apvts.getParameter(getSlotParamID(slotIndex))) {
+        parameter->beginChangeGesture();
+        parameter->setValueNotifyingHost(parameter->convertTo0to1(static_cast<float>(effectChoice)));
+        parameter->endChangeGesture();
+    }
+}
+
+bool EffectsRackModule::isEffectSelectedInAnotherSlot(int slotIndex, int effectChoice) const {
+    if (effectChoice == noEffect)
+        return false;
+
+    for (int otherSlot = 0; otherSlot < numSlots; ++otherSlot) {
+        if (otherSlot != slotIndex && getSlotSelection(otherSlot) == effectChoice)
+            return true;
+    }
+
+    return false;
+}
+
+void EffectsRackModule::updateSlotMenus() {
+    static const juce::StringArray effectNames { "None", "Delay", "Reverb", "Chorus", "Dist" };
+
+    updatingSlotMenus = true;
+
+    for (int slot = 0; slot < numSlots; ++slot) {
+        auto& menu = slotMenus[slotToIndex(slot)];
+        const auto selectedEffect = getSlotSelection(slot);
+
+        menu.clear(juce::dontSendNotification);
+        menu.addItem(effectNames[noEffect], noEffect + 1);
+
+        for (int effect = delayEffect; effect <= distortionEffect; ++effect) {
+            if (effect == selectedEffect || ! isEffectSelectedInAnotherSlot(slot, effect))
+                menu.addItem(effectNames[effect], effect + 1);
+        }
+
+        menu.setSelectedId(selectedEffect + 1, juce::dontSendNotification);
+        removeSlotButtons[slotToIndex(slot)].setEnabled(selectedEffect != noEffect);
+    }
+
+    updatingSlotMenus = false;
+}
+
+void EffectsRackModule::updateEffectVisibility() {
+    const auto showDelay = [this] (bool shouldShow) {
+        delaySlotLabel.setVisible(shouldShow);
+        delayOnButton.setVisible(shouldShow);
+        delayTimeLabel.setVisible(shouldShow);
+        delayTimeSlider.setVisible(shouldShow);
+        delayTimeValueLabel.setVisible(shouldShow);
+        delayFeedbackLabel.setVisible(shouldShow);
+        delayFeedbackSlider.setVisible(shouldShow);
+        delayFeedbackValueLabel.setVisible(shouldShow);
+        delayMixLabel.setVisible(shouldShow);
+        delayMixSlider.setVisible(shouldShow);
+        delayMixValueLabel.setVisible(shouldShow);
+    };
+
+    const auto showReverb = [this] (bool shouldShow) {
+        reverbSlotLabel.setVisible(shouldShow);
+        reverbOnButton.setVisible(shouldShow);
+        reverbRoomLabel.setVisible(shouldShow);
+        reverbRoomSlider.setVisible(shouldShow);
+        reverbRoomValueLabel.setVisible(shouldShow);
+        reverbDampingLabel.setVisible(shouldShow);
+        reverbDampingSlider.setVisible(shouldShow);
+        reverbDampingValueLabel.setVisible(shouldShow);
+        reverbMixLabel.setVisible(shouldShow);
+        reverbMixSlider.setVisible(shouldShow);
+        reverbMixValueLabel.setVisible(shouldShow);
+    };
+
+    const auto showChorus = [this] (bool shouldShow) {
+        chorusSlotLabel.setVisible(shouldShow);
+        chorusOnButton.setVisible(shouldShow);
+        chorusRateLabel.setVisible(shouldShow);
+        chorusRateSlider.setVisible(shouldShow);
+        chorusRateValueLabel.setVisible(shouldShow);
+        chorusDepthLabel.setVisible(shouldShow);
+        chorusDepthSlider.setVisible(shouldShow);
+        chorusDepthValueLabel.setVisible(shouldShow);
+        chorusMixLabel.setVisible(shouldShow);
+        chorusMixSlider.setVisible(shouldShow);
+        chorusMixValueLabel.setVisible(shouldShow);
+    };
+
+    const auto showDistortion = [this] (bool shouldShow) {
+        distortionSlotLabel.setVisible(shouldShow);
+        distortionOnButton.setVisible(shouldShow);
+        distortionDriveLabel.setVisible(shouldShow);
+        distortionDriveSlider.setVisible(shouldShow);
+        distortionDriveValueLabel.setVisible(shouldShow);
+        distortionToneLabel.setVisible(shouldShow);
+        distortionToneSlider.setVisible(shouldShow);
+        distortionToneValueLabel.setVisible(shouldShow);
+        distortionMixLabel.setVisible(shouldShow);
+        distortionMixSlider.setVisible(shouldShow);
+        distortionMixValueLabel.setVisible(shouldShow);
+    };
+
+    showDelay(false);
+    showReverb(false);
+    showChorus(false);
+    showDistortion(false);
+
+    for (int slot = 0; slot < numSlots; ++slot) {
+        switch (getSlotSelection(slot)) {
+            case delayEffect:      showDelay(true); break;
+            case reverbEffect:     showReverb(true); break;
+            case chorusEffect:     showChorus(true); break;
+            case distortionEffect: showDistortion(true); break;
+            default: break;
+        }
+    }
+}
+
 void EffectsRackModule::paint(juce::Graphics& g) {
     g.fillAll(juce::Colours::slategrey.darker(0.25f));
 
     auto area = getLocalBounds();
-    area.removeFromTop(34);
     area.removeFromBottom(area.getHeight() / 12);
+    area.removeFromTop(8);
 
     g.setColour(juce::Colours::whitesmoke);
     for (int i = 0; i < 4; ++i) {
-        auto slot = area.removeFromTop(area.getHeight() / (4 - i)).reduced(8, 5);
+        auto slot = area.removeFromTop(area.getHeight() / (4 - i)).reduced(8, 4);
         g.drawRect(slot, 1);
     }
 }
@@ -135,7 +323,7 @@ void EffectsRackModule::resized() {
     auto area = getLocalBounds();
     moduleLabel.setBounds(area.removeFromBottom(area.getHeight() / 12));
 
-    area.removeFromTop(10);
+    area.removeFromTop(8);
     auto slotArea = area.reduced(8, 0);
     const auto slotHeight = slotArea.getHeight() / 4;
 
@@ -157,6 +345,9 @@ void EffectsRackModule::resized() {
     };
 
     auto placeEffectSlot = [&placeSlider] (juce::Rectangle<int> slot,
+                                           juce::Label& slotNumberLabel,
+                                           juce::ComboBox& slotMenu,
+                                           juce::TextButton& removeButton,
                                            juce::Label& title,
                                            juce::TextButton& onButton,
                                            juce::Label& row1Label,
@@ -168,15 +359,23 @@ void EffectsRackModule::resized() {
                                            juce::Label& row3Label,
                                            juce::Slider& row3Slider,
                                            juce::Label& row3ValueLabel) {
-        auto content = slot.reduced(8, 10);
-        title.setBounds(content.removeFromTop(22));
+        auto content = slot.reduced(8, 8);
+        auto header = content.removeFromTop(26);
+        slotNumberLabel.setBounds(header.removeFromLeft(24));
+        header.removeFromLeft(6);
+        removeButton.setBounds(header.removeFromRight(24).reduced(0, 1));
+        header.removeFromRight(6);
+        onButton.setBounds(header.removeFromRight(52).reduced(0, 1));
+        header.removeFromRight(6);
+        slotMenu.setBounds(header.reduced(0, 1));
 
-        auto onRow = content.removeFromTop(26);
-        onButton.setBounds(onRow.removeFromRight(58));
-        content.removeFromTop(4);
+        auto titleRow = content.removeFromTop(20);
+        title.setBounds(titleRow.removeFromLeft(100));
+
+        content.removeFromTop(1);
 
         constexpr int rowHeight = 24;
-        constexpr int rowPitch = 30;
+        constexpr int rowPitch = 28;
         const auto rowsTop = content.getY();
 
         placeSlider(content.withY(rowsTop).withHeight(rowHeight), row1Label, row1Slider, row1ValueLabel);
@@ -184,7 +383,42 @@ void EffectsRackModule::resized() {
         placeSlider(content.withY(rowsTop + (rowPitch * 2)).withHeight(rowHeight), row3Label, row3Slider, row3ValueLabel);
     };
 
-    placeEffectSlot(slotArea.removeFromTop(slotHeight),
+    auto placeEmptySlot = [] (juce::Rectangle<int> slot,
+                              juce::Label& slotNumberLabel,
+                              juce::ComboBox& slotMenu,
+                              juce::TextButton& removeButton) {
+        auto content = slot.reduced(8, 8);
+        auto header = content.removeFromTop(26);
+        slotNumberLabel.setBounds(header.removeFromLeft(24));
+        header.removeFromLeft(6);
+        removeButton.setBounds(header.removeFromRight(24).reduced(0, 1));
+        header.removeFromRight(64);
+        slotMenu.setBounds(header.reduced(0, 1));
+    };
+
+    std::array<juce::Rectangle<int>, numSlots> slots;
+    for (int slot = 0; slot < numSlots; ++slot)
+        slots[slotToIndex(slot)] = slotArea.removeFromTop(slotHeight);
+
+    for (int slot = 0; slot < numSlots; ++slot)
+        placeEmptySlot(slots[slotToIndex(slot)],
+                       slotNumberLabels[slotToIndex(slot)],
+                       slotMenus[slotToIndex(slot)],
+                       removeSlotButtons[slotToIndex(slot)]);
+
+    auto selectedSlotForEffect = [this] (int effectChoice) {
+        for (int slot = 0; slot < numSlots; ++slot)
+            if (getSlotSelection(slot) == effectChoice)
+                return slot;
+
+        return -1;
+    };
+
+    if (const auto slot = selectedSlotForEffect(delayEffect); slot >= 0)
+        placeEffectSlot(slots[slotToIndex(slot)],
+                    slotNumberLabels[slotToIndex(slot)],
+                    slotMenus[slotToIndex(slot)],
+                    removeSlotButtons[slotToIndex(slot)],
                     delaySlotLabel,
                     delayOnButton,
                     delayTimeLabel,
@@ -197,7 +431,11 @@ void EffectsRackModule::resized() {
                     delayMixSlider,
                     delayMixValueLabel);
 
-    placeEffectSlot(slotArea.removeFromTop(slotHeight),
+    if (const auto slot = selectedSlotForEffect(reverbEffect); slot >= 0)
+        placeEffectSlot(slots[slotToIndex(slot)],
+                    slotNumberLabels[slotToIndex(slot)],
+                    slotMenus[slotToIndex(slot)],
+                    removeSlotButtons[slotToIndex(slot)],
                     reverbSlotLabel,
                     reverbOnButton,
                     reverbRoomLabel,
@@ -210,7 +448,11 @@ void EffectsRackModule::resized() {
                     reverbMixSlider,
                     reverbMixValueLabel);
 
-    placeEffectSlot(slotArea.removeFromTop(slotHeight),
+    if (const auto slot = selectedSlotForEffect(chorusEffect); slot >= 0)
+        placeEffectSlot(slots[slotToIndex(slot)],
+                    slotNumberLabels[slotToIndex(slot)],
+                    slotMenus[slotToIndex(slot)],
+                    removeSlotButtons[slotToIndex(slot)],
                     chorusSlotLabel,
                     chorusOnButton,
                     chorusRateLabel,
@@ -223,7 +465,11 @@ void EffectsRackModule::resized() {
                     chorusMixSlider,
                     chorusMixValueLabel);
 
-    placeEffectSlot(slotArea.removeFromTop(slotHeight),
+    if (const auto slot = selectedSlotForEffect(distortionEffect); slot >= 0)
+        placeEffectSlot(slots[slotToIndex(slot)],
+                    slotNumberLabels[slotToIndex(slot)],
+                    slotMenus[slotToIndex(slot)],
+                    removeSlotButtons[slotToIndex(slot)],
                     distortionSlotLabel,
                     distortionOnButton,
                     distortionDriveLabel,

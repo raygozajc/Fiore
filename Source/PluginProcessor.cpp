@@ -64,6 +64,12 @@ juce::AudioProcessorValueTreeState::ParameterLayout FioreAudioProcessor::createP
     params.push_back(std::make_unique<juce::AudioParameterFloat>(ParameterID("GAIN", 1), "Global Gain", gainRange, 0.0));
 
     // Insert FX Params
+    juce::StringArray insertEffectChoices { "None", "Delay", "Reverb", "Chorus", "Dist" };
+    params.push_back(std::make_unique<juce::AudioParameterChoice>(ParameterID("INSERT_SLOT_1", 1), "Insert Slot 1", insertEffectChoices, 1));
+    params.push_back(std::make_unique<juce::AudioParameterChoice>(ParameterID("INSERT_SLOT_2", 1), "Insert Slot 2", insertEffectChoices, 2));
+    params.push_back(std::make_unique<juce::AudioParameterChoice>(ParameterID("INSERT_SLOT_3", 1), "Insert Slot 3", insertEffectChoices, 3));
+    params.push_back(std::make_unique<juce::AudioParameterChoice>(ParameterID("INSERT_SLOT_4", 1), "Insert Slot 4", insertEffectChoices, 4));
+
     juce::NormalisableRange<float> delayTimeRange {20.0f, DelayEffect::maxDelayTimeSeconds * 1000.0f, 1.0f};
     delayTimeRange.setSkewForCentre(350.0f);
     params.push_back(std::make_unique<juce::AudioParameterBool>(ParameterID("DELAY_ON", 1), "Delay On/Off", true));
@@ -200,29 +206,47 @@ void FioreAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::
     // Get audio from the synth. Will call renderNextBlock for all the synth voices
     synth.renderNextBlock(buffer, midiMessages, 0, buffer.getNumSamples());
 
-    const auto delayIsOn = apvts.getRawParameterValue("DELAY_ON")->load() > 0.5f;
-    const auto delayTimeMs = apvts.getRawParameterValue("DELAY_TIME")->load();
-    const auto delayFeedback = apvts.getRawParameterValue("DELAY_FEEDBACK")->load() / 100.0f;
-    const auto delayWet = apvts.getRawParameterValue("DELAY_MIX")->load() / 100.0f;
-    outputDelay.process(buffer, delayIsOn, delayTimeMs, delayFeedback, delayWet);
+    auto processInsertEffect = [this, &buffer] (int effectChoice) {
+        switch (effectChoice) {
+            case 1: {
+                const auto delayIsOn = apvts.getRawParameterValue("DELAY_ON")->load() > 0.5f;
+                const auto delayTimeMs = apvts.getRawParameterValue("DELAY_TIME")->load();
+                const auto delayFeedback = apvts.getRawParameterValue("DELAY_FEEDBACK")->load() / 100.0f;
+                const auto delayWet = apvts.getRawParameterValue("DELAY_MIX")->load() / 100.0f;
+                outputDelay.process(buffer, delayIsOn, delayTimeMs, delayFeedback, delayWet);
+                break;
+            }
+            case 2: {
+                const auto reverbIsOn = apvts.getRawParameterValue("REVERB_ON")->load() > 0.5f;
+                const auto reverbRoom = apvts.getRawParameterValue("REVERB_ROOM")->load() / 100.0f;
+                const auto reverbDamping = apvts.getRawParameterValue("REVERB_DAMPING")->load() / 100.0f;
+                const auto reverbWet = apvts.getRawParameterValue("REVERB_MIX")->load() / 100.0f;
+                outputReverb.process(buffer, reverbIsOn, reverbRoom, reverbDamping, reverbWet);
+                break;
+            }
+            case 3: {
+                const auto chorusIsOn = apvts.getRawParameterValue("CHORUS_ON")->load() > 0.5f;
+                const auto chorusRate = apvts.getRawParameterValue("CHORUS_RATE")->load();
+                const auto chorusDepth = apvts.getRawParameterValue("CHORUS_DEPTH")->load() / 100.0f;
+                const auto chorusWet = apvts.getRawParameterValue("CHORUS_MIX")->load() / 100.0f;
+                outputChorus.process(buffer, chorusIsOn, chorusRate, chorusDepth, chorusWet);
+                break;
+            }
+            case 4: {
+                const auto distortionIsOn = apvts.getRawParameterValue("DIST_ON")->load() > 0.5f;
+                const auto distortionDrive = apvts.getRawParameterValue("DIST_DRIVE")->load() / 100.0f;
+                const auto distortionTone = apvts.getRawParameterValue("DIST_TONE")->load() / 100.0f;
+                const auto distortionWet = apvts.getRawParameterValue("DIST_MIX")->load() / 100.0f;
+                outputDistortion.process(buffer, distortionIsOn, distortionDrive, distortionTone, distortionWet);
+                break;
+            }
+            default:
+                break;
+        }
+    };
 
-    const auto reverbIsOn = apvts.getRawParameterValue("REVERB_ON")->load() > 0.5f;
-    const auto reverbRoom = apvts.getRawParameterValue("REVERB_ROOM")->load() / 100.0f;
-    const auto reverbDamping = apvts.getRawParameterValue("REVERB_DAMPING")->load() / 100.0f;
-    const auto reverbWet = apvts.getRawParameterValue("REVERB_MIX")->load() / 100.0f;
-    outputReverb.process(buffer, reverbIsOn, reverbRoom, reverbDamping, reverbWet);
-
-    const auto chorusIsOn = apvts.getRawParameterValue("CHORUS_ON")->load() > 0.5f;
-    const auto chorusRate = apvts.getRawParameterValue("CHORUS_RATE")->load();
-    const auto chorusDepth = apvts.getRawParameterValue("CHORUS_DEPTH")->load() / 100.0f;
-    const auto chorusWet = apvts.getRawParameterValue("CHORUS_MIX")->load() / 100.0f;
-    outputChorus.process(buffer, chorusIsOn, chorusRate, chorusDepth, chorusWet);
-
-    const auto distortionIsOn = apvts.getRawParameterValue("DIST_ON")->load() > 0.5f;
-    const auto distortionDrive = apvts.getRawParameterValue("DIST_DRIVE")->load() / 100.0f;
-    const auto distortionTone = apvts.getRawParameterValue("DIST_TONE")->load() / 100.0f;
-    const auto distortionWet = apvts.getRawParameterValue("DIST_MIX")->load() / 100.0f;
-    outputDistortion.process(buffer, distortionIsOn, distortionDrive, distortionTone, distortionWet);
+    for (int slot = 1; slot <= 4; ++slot)
+        processInsertEffect(juce::roundToInt(apvts.getRawParameterValue(juce::String("INSERT_SLOT_") + juce::String(slot))->load()));
 }
 
 void FioreAudioProcessor::releaseResources() {
